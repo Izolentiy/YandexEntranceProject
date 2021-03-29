@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">EntranceProject</string>
+    <string name="stocks">Stocks</string>
+    <string name="favorite">Favorite</string>
+</resources>
