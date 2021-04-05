@@ -1,6 +1,7 @@
 package com.example.entranceproject.ui.main
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,8 +33,8 @@ class StocksFragment : Fragment() {
         binding.apply {
             recyclerViewTasks.adapter = stockAdapter
         }
-        viewModel.stocks.observe(viewLifecycleOwner) {
-            stockAdapter.submitList(it)
+        viewModel.stocks.observe(viewLifecycleOwner) { result ->
+            stockAdapter.submitList(result.data)
         }
 
         return binding.root
@@ -51,6 +52,7 @@ class StocksFragment : Fragment() {
         fun newInstance(sectionNumber: Int): StocksFragment {
             return StocksFragment().apply {
                 arguments = Bundle().apply {
+                    Log.d("INDEX_TAG", "newInstance: $sectionNumber")
                     putInt(ARG_SECTION_NUMBER, sectionNumber)
                 }
             }

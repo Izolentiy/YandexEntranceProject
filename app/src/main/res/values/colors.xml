@@ -4,4 +4,6 @@
     <color name="light_black">#1A1A1A</color>
     <color name="white">#FFFFFFFF</color>
     <color name="grey">#BABABA</color>
+    <color name="green">#24B25D</color>
+    <color name="red">#B22424</color>
 </resources>

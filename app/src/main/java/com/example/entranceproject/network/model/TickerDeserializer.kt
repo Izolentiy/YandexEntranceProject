@@ -11,9 +11,10 @@ class TickerDeserializer : JsonDeserializer<TickersDto> {
         typeOfT: Type?,
         context: JsonDeserializationContext?
     ): TickersDto {
-        val listOfTickers = json?.asJsonArray?.map {
-            it.asJsonObject.get("symbol").asString
+        val result = json?.asJsonArray?.flatMap {
+            val tickers = it.asJsonObject.get("quotes").asJsonArray
+            tickers.map { item -> item.asString }
         } ?: emptyList()
-        return TickersDto(listOfTickers)
+        return TickersDto(result)
     }
 }

@@ -7,10 +7,13 @@ import androidx.room.PrimaryKey
 data class Stock(
     @PrimaryKey
     val ticker: String,
+    val companyName: String? = "",
     val companyLogo: String? = "",
-    val companyName: String = "",
-    val currency: String = "",
-    var currentPrice: Double = 0.0,
-    var dailyDelta: Double = 0.0,
-    var isFavorite: Boolean = false
-)
+    val country: String? = "",
+    val currency: String? = "",
+    val currentPrice: Double = 0.0,
+    val openPrice: Double = 0.0,
+    val isFavorite: Boolean = false
+) {
+    var dailyDelta = currentPrice - openPrice
+}

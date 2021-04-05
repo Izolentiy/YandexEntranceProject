@@ -41,16 +41,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(
-        app: Application,
-        callback: StockDatabase.StockCallback
-    ) = Room.databaseBuilder(app, StockDatabase::class.java, "stocks_table")
+    fun provideDatabase(app: Application) =
+        Room.databaseBuilder(app, StockDatabase::class.java, "stocks_table")
         .fallbackToDestructiveMigration()
-        .addCallback(callback)
         .build()
-
-    @Provides
-    fun provideDao(db: StockDatabase) = db.stockDao()
 
     @Provides
     @ApplicationScope

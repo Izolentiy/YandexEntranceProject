@@ -26,7 +26,8 @@ android {
     buildTypes {
         debug {
             // Add my api key to BuildConfig class
-            buildConfigField ("String", "API_KEY", local_properties['api_key'])
+            buildConfigField ("String", "MBOUM_KEY", local_properties['mboum_api_key'])
+            buildConfigField ("String", "FINNHUB_KEY", local_properties['finnhub_api_key'])
         }
         release {
             minifyEnabled false

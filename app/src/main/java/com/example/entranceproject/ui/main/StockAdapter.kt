@@ -1,7 +1,9 @@
 package com.example.entranceproject.ui.main
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -10,6 +12,8 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.ItemStockBinding
+import java.text.NumberFormat
+import java.util.*
 
 class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator()) {
 
@@ -38,23 +42,37 @@ class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockCompa
             binding.apply {
                 Glide.with(itemView)
                     .load(stock.companyLogo)
-                    .centerCrop()
+                    .fitCenter()
                     .transition(DrawableTransitionOptions.withCrossFade())
-                    .placeholder(R.drawable.ic_placeholder)
+                    .placeholder(R.drawable.ic_logo_bg)
                     .into(imageLogo)
 
                 if (stock.isFavorite)
-                    imageViewStar.setImageDrawable(
-                        itemView.resources.getDrawable(R.drawable.ic_star_colored)
-                    )  // Note!!!
+                    imageViewStar.setImageDrawable(ResourcesCompat.getDrawable(
+                        itemView.resources, R.drawable.ic_star_colored, itemView.context.theme))
 
                 textViewCompanyName.text = stock.companyName
                 textViewTicker.text = stock.ticker
 
-                textViewCurrentPrice.text = stock.currentPrice.toString()
-                textViewDayDelta.text = stock.dailyDelta.toString()
+                // For a while only dollars
+                val format = NumberFormat.getCurrencyInstance(Locale.US)
+                format.currency = Currency.getInstance("USD")
+
+                textViewCurrentPrice.text = format.format(stock.currentPrice)
+                textViewDayDelta.text = format.format(stock.dailyDelta)
+
+                if (stock.dailyDelta >= 0)
+                    textViewDayDelta.setTextColor(ResourcesCompat.getColor(
+                        itemView.resources, R.color.green, itemView.context.theme))
+                else
+                    textViewDayDelta.setTextColor(ResourcesCompat.getColor(
+                        itemView.resources, R.color.red, itemView.context.theme))
             }
         }
+    }
+
+    interface OnStarClickListener {
+        fun onStarClick(position: Int)
     }
 
     class StockComparator : DiffUtil.ItemCallback<Stock>() {

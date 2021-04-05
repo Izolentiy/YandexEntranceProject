@@ -24,10 +24,6 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener{
         binding.apply {
             // SearchView setting
             searchView.setOnQueryTextListener(this@MainActivity)
-            viewModel.getStocks()
-            viewModel.stocks.observe(this@MainActivity) {
-
-            }
 
             // TabLayout setting
             viewPager.adapter = PagerAdapter(this@MainActivity)
@@ -39,7 +35,7 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener{
 
     // Search query change listener methods
     override fun onQueryTextSubmit(query: String?): Boolean {
-        viewModel.searchStocks(query.orEmpty())
+//        viewModel.searchStocks(query.orEmpty())
         return true
     }
 
