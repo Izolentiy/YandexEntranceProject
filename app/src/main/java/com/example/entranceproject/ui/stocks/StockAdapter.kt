@@ -1,4 +1,4 @@
-package com.example.entranceproject.ui.main
+package com.example.entranceproject.ui.stocks
 
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,10 +15,13 @@ import com.example.entranceproject.databinding.ItemStockBinding
 import java.text.NumberFormat
 import java.util.*
 
-class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator()) {
+class StockAdapter(
+    private val onStarClickListener: (Stock) -> Unit
+) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder {
-        return StockViewHolder(ItemStockBinding
+        return StockViewHolder(
+            ItemStockBinding
                 .inflate(LayoutInflater.from(parent.context), parent, false)
         )
     }
@@ -34,8 +37,15 @@ class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockCompa
 //    }
 
 
-    class StockViewHolder(private val binding: ItemStockBinding) :
+    inner class StockViewHolder(private val binding: ItemStockBinding) :
         RecyclerView.ViewHolder(binding.root) {
+
+        init {
+            Log.d("STAR_TAG", "onBindClickListener: $bindingAdapterPosition")
+            binding.imageViewStar.setOnClickListener {
+                onStarClickListener(getItem(bindingAdapterPosition))
+            }
+        }
 
         // Bind stock properties to corresponding view in view holder
         fun bind(stock: Stock) {
@@ -47,9 +57,16 @@ class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockCompa
                     .placeholder(R.drawable.ic_logo_bg)
                     .into(imageLogo)
 
-                if (stock.isFavorite)
-                    imageViewStar.setImageDrawable(ResourcesCompat.getDrawable(
-                        itemView.resources, R.drawable.ic_star_colored, itemView.context.theme))
+                if (stock.isFavorite) imageViewStar.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        itemView.resources, R.drawable.ic_star_colored, itemView.context.theme
+                    )
+                )
+                else imageViewStar.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        itemView.resources, R.drawable.ic_star, itemView.context.theme
+                    )
+                )
 
                 textViewCompanyName.text = stock.companyName
                 textViewTicker.text = stock.ticker
@@ -62,17 +79,19 @@ class StockAdapter : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockCompa
                 textViewDayDelta.text = format.format(stock.dailyDelta)
 
                 if (stock.dailyDelta >= 0)
-                    textViewDayDelta.setTextColor(ResourcesCompat.getColor(
-                        itemView.resources, R.color.green, itemView.context.theme))
+                    textViewDayDelta.setTextColor(
+                        ResourcesCompat.getColor(
+                            itemView.resources, R.color.green, itemView.context.theme
+                        )
+                    )
                 else
-                    textViewDayDelta.setTextColor(ResourcesCompat.getColor(
-                        itemView.resources, R.color.red, itemView.context.theme))
+                    textViewDayDelta.setTextColor(
+                        ResourcesCompat.getColor(
+                            itemView.resources, R.color.red, itemView.context.theme
+                        )
+                    )
             }
         }
-    }
-
-    interface OnStarClickListener {
-        fun onStarClick(position: Int)
     }
 
     class StockComparator : DiffUtil.ItemCallback<Stock>() {

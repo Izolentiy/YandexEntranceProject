@@ -4,9 +4,9 @@ import kotlinx.coroutines.flow.*
 
 fun <ResultType, RequestType> networkBoundResource(
     loadFromDb: () -> Flow<ResultType>,
+    shouldFetch: (ResultType) -> Boolean = { true },
     fetch: suspend () -> RequestType,
-    saveFetchResult: suspend (RequestType) -> Unit,
-    shouldFetch: (ResultType) -> Boolean = { true }
+    saveFetchResult: suspend (RequestType) -> Unit
 ) = flow {
     val data = loadFromDb().first()
 
@@ -21,5 +21,6 @@ fun <ResultType, RequestType> networkBoundResource(
     } else {
         loadFromDb().map { Resource.success(it) }
     }
+
     emitAll(flow)
 }

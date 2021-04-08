@@ -19,7 +19,7 @@ val trendingTickers = listOf(
     "CAN",
     "GOEV",
     "CHPT",
-    "SPCE",
+//    "SPCE",
     "COST",
     "ACAD",
     "ENPH",

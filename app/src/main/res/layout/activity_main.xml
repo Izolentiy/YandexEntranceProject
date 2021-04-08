@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="8dp"
     android:paddingStart="16dp"
+    android:paddingTop="8dp"
     android:paddingEnd="16dp"
     tools:context=".ui.main.MainActivity">
 
@@ -19,6 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/search_border_shape"
+            android:focusable="true"
             android:paddingStart="-7dp"
             android:paddingEnd="7dp"
             android:theme="@style/Widget.AppCompat.Light.SearchView.MySearchView"

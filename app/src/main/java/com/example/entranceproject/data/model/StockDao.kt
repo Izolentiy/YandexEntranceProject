@@ -2,17 +2,22 @@ package com.example.entranceproject.data.model
 
 import androidx.room.*
 import com.example.entranceproject.ui.main.PagerAdapter
+import com.example.entranceproject.ui.main.Tab
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StockDao {
 
-    fun getStocks(): Flow<List<Stock>> = getAllStocks()
+    fun getStocks(tab: Tab): Flow<List<Stock>> =
+        when (tab) {
+            Tab.STOCKS -> getAllStocks()
+            Tab.FAVORITE -> getFavoriteStocks()
+        }
 
     @Query("select * from stocks_table")
     fun getAllStocks(): Flow<List<Stock>>
 
-    @Query("select * from stocks_table where (isFavorite = 1)")
+    @Query("select * from stocks_table where isFavorite = 1")
     fun getFavoriteStocks(): Flow<List<Stock>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

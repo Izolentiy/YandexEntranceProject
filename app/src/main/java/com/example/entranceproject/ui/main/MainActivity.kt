@@ -2,6 +2,7 @@ package com.example.entranceproject.ui.main
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -10,7 +11,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener{
+class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -24,6 +25,13 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener{
         binding.apply {
             // SearchView setting
             searchView.setOnQueryTextListener(this@MainActivity)
+            searchView.setOnFocusChangeListener { view, hasFocus ->
+                Log.d("FOCUS_TAG", "onCreate: $view")
+                Log.d("FOCUS_TAG", "onCreate: $hasFocus")
+            }
+
+//            Log.d("WEB_SOCKET_TAG", "onCreate: Subscribed to web socket events")
+//            viewModel.subscribeToSocketEvents()
 
             // TabLayout setting
             viewPager.adapter = PagerAdapter(this@MainActivity)
