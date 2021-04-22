@@ -1,8 +1,7 @@
 package com.example.entranceproject.data.model
 
 import androidx.room.*
-import com.example.entranceproject.ui.main.PagerAdapter
-import com.example.entranceproject.ui.main.Tab
+import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,6 +19,9 @@ interface StockDao {
     @Query("select * from stocks_table where isFavorite = 1")
     fun getFavoriteStocks(): Flow<List<Stock>>
 
+    @Query("select * from stocks_table where ticker = :ticker")
+    suspend fun getStock(ticker: String): Stock
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStocks(stocks: List<Stock>)
 
@@ -29,7 +31,10 @@ interface StockDao {
     @Delete
     suspend fun delete(stock: Stock)
 
-    @Update()
+    @Update
     suspend fun update(stock: Stock)
+
+    @Update
+    suspend fun updateStocks(stocks: List<Stock>)
 
 }

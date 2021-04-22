@@ -4,8 +4,11 @@ import android.app.Application
 import androidx.room.Room
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.network.FinnhubService
-import com.example.entranceproject.network.model.TickerDeserializer
+import com.example.entranceproject.network.model.TickerPriceDeserializer
+import com.example.entranceproject.network.model.TickersDeserializer
+import com.example.entranceproject.network.model.TickerPriceDto
 import com.example.entranceproject.network.model.TickersDto
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
@@ -24,28 +27,29 @@ import javax.inject.Singleton
 object AppModule {
 
     @Provides
-    @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            .connectTimeout(39, TimeUnit.SECONDS)
-//            .hostnameVerifier { _,_ -> true }
-            .build()
-    }
+    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(39, TimeUnit.SECONDS)
+        .build()
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
-        val gson = GsonBuilder()
-            .registerTypeAdapter(TickersDto::class.java, TickerDeserializer())
-            .setLenient()
-            .create()
-        return Retrofit.Builder()
-            .client(client)
-            .baseUrl(FinnhubService.BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create(gson))
-            .build()
-    }
+    fun provideGson(): Gson = GsonBuilder()
+        .registerTypeAdapter(TickersDto::class.java, TickersDeserializer())
+        .registerTypeAdapter(TickerPriceDto::class.java, TickerPriceDeserializer())
+        .setLenient()
+        .create()
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(
+        gson: Gson,
+        client: OkHttpClient
+    ): Retrofit = Retrofit.Builder()
+        .client(client)
+        .baseUrl(FinnhubService.BASE_URL)
+        .addConverterFactory(GsonConverterFactory.create(gson))
+        .build()
 
     @Provides
     @Singleton

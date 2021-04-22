@@ -5,54 +5,87 @@ import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.trendingTickers
 import com.example.entranceproject.network.websocket.SocketUpdate
-import com.example.entranceproject.network.websocket.WebServiceProvider
-import com.example.entranceproject.ui.main.Tab
+import com.example.entranceproject.network.websocket.WebSocketHandler
+import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 class Repository @Inject constructor(
     private val service: FinnhubService,
     private val database: StockDatabase,
-    private val webServiceProvider: WebServiceProvider
+    private val webSocketHandler: WebSocketHandler
 ) {
     private val stockDao = database.stockDao()
+    lateinit var observablePrices: StateFlow<List<String>>
+//    private val getRelevantTickers: Flow<String>
 
-    fun getStocks(tab: Tab) = networkBoundResource(
+    fun getStocks(tab: Tab, relevantTickers: /*Flow<List<String>>*/List<String>) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
-        shouldFetch = { stocks ->
+
+        // Fetch stocks info
+        shouldFetchStocks = { stocks ->
             if (tab == Tab.FAVORITE) false
             else stocks.isEmpty()
         },
-        fetch = {
+        fetchStocks = {
             withContext(Dispatchers.IO) {
-                /*// Some issues with my plan, could not fetch data
+                /* Some issues with my plan, could not fetch data
                 val tickers = service.getMostWatchedTickers().tickers*/
                 val tickers = trendingTickers
-                tickers.map { async { getTickerData(it) } }.awaitAll()
+                tickers.map { async { getStockData(it) } }.awaitAll()
             }
         },
-        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
+        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
+
+        // Fetch only prices
+        shouldFetchPrices = {
+            tab != Tab.FAVORITE && relevantTickers.isNotEmpty()
+        },
+        fetchPrices = {
+            withContext(Dispatchers.IO) {
+                relevantTickers.map { async { updateStockPrice(it) } }.awaitAll()
+            }
+        },
+        updatePrices = { stocks -> stockDao.updateStocks(stocks) },
     )
 
-    fun closeSocket() { webServiceProvider.stopSocket() }
+    // Methods to work with WebSocket will be used later
+    fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
 
-    fun openSocket(): Channel<SocketUpdate> = webServiceProvider.startSocket()
+    fun closeSocket() { webSocketHandler.closeSocket() }
+
+    suspend fun refreshData() {
+
+    }
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
 
-    private suspend fun getTickerData(ticker: String) = coroutineScope {
+    private suspend fun updateStockPrice(ticker: String) = coroutineScope {
+        val quoteData = async { service.getQuoteData(ticker) }
+        val stock = stockDao.getStock(ticker)
+        with(quoteData.await()) {
+            return@coroutineScope stock.copy(currentPrice = c, openPrice = o)
+        }
+    }
+
+    private suspend fun getStockData(ticker: String) = coroutineScope {
         val quoteData = async { service.getQuoteData(ticker) }
         val companyData = async { service.getCompanyProfile(ticker) }
 
         companyData.await().let { company ->
             quoteData.await().let { quote ->
                 return@coroutineScope Stock(
-                    ticker, company.name, company.logo,
-                    company.country, company.currency, quote.c, quote.o, false
+                    ticker = ticker, companyName = company.name, companyLogo = company.logo,
+                    country = company.country, currency = company.currency,
+                    currentPrice = quote.c, openPrice = quote.o, isFavorite = false
                 )
             }
         }
+    }
+
+    companion object {
+        private val TAG = "${Repository::class.java.simpleName}_TAG"
     }
 
 }

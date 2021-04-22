@@ -5,9 +5,11 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Transformations.switchMap
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
+import com.example.entranceproject.ui.pager.Tab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,8 +18,23 @@ class MainViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    private val tab = MutableLiveData<Tab>()
-    val stocks = switchMap(tab) { repository.getStocks(it).asLiveData() }
+    private val tab = MutableStateFlow(Tab.values().first())
+    val visibleTickers = MutableStateFlow(listOf<String>())
+
+    @ExperimentalCoroutinesApi
+//    val stocks = combine(tab, visibleTickers) { tab, visibleTickers ->
+//        Pair(tab, visibleTickers)
+//    }.flatMapLatest {
+//        Log.d(TAG, "stocks: ${it.second}")
+//        repository.getStocks(it.first, it.second)
+//    }.asLiveData()
+    val stocks = switchMap(visibleTickers.asLiveData()) {
+        Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
+        Log.d(TAG, "tab: ${tab.value}")
+        repository.getStocks(tab.value, visibleTickers.value).asLiveData() }
+//    val visibleTickers = mutableListOf<String>()
+//    val stateFlow = MutableStateFlow(visibleTickers)
+//    val stockPrice: StateFlow<SocketUpdate> = repository.openSocket()
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
@@ -25,32 +42,23 @@ class MainViewModel @Inject constructor(
     fun searchStocks(query: String) =
         viewModelScope.launch(Dispatchers.IO) {}
 
-    fun subscribeToSocketEvents() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                repository.openSocket().consumeEach {
-                    if (it.exception == null)
-                        Log.d("WEB_SOCKET_TAG", "subscribeToSocketEvents: ${it.text}")
-                    else
-                        onSocketError(it.exception)
-                }
-            } catch (exception: Exception) {
-                onSocketError(exception)
-            }
-        }
-    }
+    fun subscribeToSocketEvents(tickers: List<String>) =
+        viewModelScope.launch(Dispatchers.IO) {}
 
-    private fun onSocketError(error: Throwable) {
-        Log.d("SOCKET_TAG", "onSocketError: ${error.message}")
-    }
-
-    override fun onCleared() {
-        repository.closeSocket()
-        super.onCleared()
+    fun refreshData() {
+        viewModelScope.launch(Dispatchers.IO) { repository.refreshData() }
     }
 
     fun setTab(index: Int) {
         tab.value = Tab.values()[index]
+    }
+
+    override fun onCleared() {
+        repository.closeSocket()
+    }
+
+    companion object {
+        private val TAG = "${MainViewModel::class.java.simpleName}_TAG"
     }
 
 }

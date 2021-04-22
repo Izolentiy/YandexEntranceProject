@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="200dp"
+    android:width="328dp"
     android:height="68dp"
     android:viewportWidth="328"
-    android:viewportHeight="68" >
+    android:viewportHeight="68"
+    >
 
     <group>
 
@@ -14,8 +15,9 @@
 
         <path
             android:pathData="M0 0V68H328V0"
-            android:fillColor="#F0F4F7"
+            android:fillColor="@color/dark_white"
             />
 
     </group>
+
 </vector>

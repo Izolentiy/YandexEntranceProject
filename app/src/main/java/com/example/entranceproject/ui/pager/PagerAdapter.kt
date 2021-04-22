@@ -1,4 +1,4 @@
-package com.example.entranceproject.ui.main
+package com.example.entranceproject.ui.pager
 
 import android.content.Context
 import androidx.fragment.app.Fragment
@@ -14,7 +14,7 @@ class PagerAdapter(context: Context) :
             R.string.stocks,
             R.string.favorite
         )
-        const val NUM_PAGES = 2
+        val NUM_PAGES = Tab.values().size
     }
 
     override fun createFragment(position: Int): Fragment =

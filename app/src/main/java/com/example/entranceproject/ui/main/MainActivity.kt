@@ -2,11 +2,12 @@ package com.example.entranceproject.ui.main
 
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.get
 import com.example.entranceproject.databinding.ActivityMainBinding
+import com.example.entranceproject.ui.pager.PagerAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -25,13 +26,13 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         binding.apply {
             // SearchView setting
             searchView.setOnQueryTextListener(this@MainActivity)
-            searchView.setOnFocusChangeListener { view, hasFocus ->
-                Log.d("FOCUS_TAG", "onCreate: $view")
-                Log.d("FOCUS_TAG", "onCreate: $hasFocus")
+            searchView.setOnQueryTextFocusChangeListener { view, hasFocus ->
+                Log.e(TAG, "onCreate: ${searchView[0]}")
+                Log.e(TAG, "onCreate: $view, $hasFocus" )
             }
 
 //            Log.d("WEB_SOCKET_TAG", "onCreate: Subscribed to web socket events")
-//            viewModel.subscribeToSocketEvents()
+//            viewModel.subscribeToSocketEvents(listOf("AAPL", "YNDX"))
 
             // TabLayout setting
             viewPager.adapter = PagerAdapter(this@MainActivity)
@@ -49,6 +50,10 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     override fun onQueryTextChange(newText: String?): Boolean {
         return true
+    }
+
+    companion object {
+        private val TAG = "${MainActivity::class.java.simpleName}_TAG"
     }
 
 }
