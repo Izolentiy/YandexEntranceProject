@@ -8,21 +8,32 @@
     tools:context=".ui.main.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:liftOnScroll="true">
 
         <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            app:layout_scrollFlags="scroll|enterAlways">
+            android:layout_height="50dp"
+            android:layout_marginStart="@dimen/activity_horizontal_margin"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"
+            android:layout_marginBottom="4dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:background="@drawable/bg_search_shape"
+            app:collapseIcon="@drawable/ic_back"
+            app:contentInsetStartWithNavigation="16dp"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:navigationIcon="@drawable/ic_search">
 
-            <androidx.appcompat.widget.SearchView
+            <!--<androidx.appcompat.widget.SearchView
                 android:id="@+id/search_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/search_border_shape"
+                android:background="@drawable/bg_search_shape"
                 android:paddingStart="-5dp"
                 android:paddingEnd="5dp"
                 android:theme="@style/Widget.AppCompat.Light.SearchView.MySearchView"
@@ -31,7 +42,14 @@
                 app:queryBackground="@null"
                 app:queryHint="Find company or ticker"
                 app:searchHintIcon="@null"
-                app:searchIcon="@drawable/ic_search" />
+                app:searchIcon="@drawable/ic_search" />-->
+
+            <TextView
+                android:id="@+id/text_view_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Find company or ticker"
+                android:textSize="16sp" />
 
         </androidx.appcompat.widget.Toolbar>
 
@@ -54,5 +72,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp" >
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/_some"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

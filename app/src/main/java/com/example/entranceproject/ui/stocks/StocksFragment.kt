@@ -17,8 +17,6 @@ import com.example.entranceproject.ui.main.MainViewModel
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class StocksFragment : Fragment() {
@@ -29,15 +27,6 @@ class StocksFragment : Fragment() {
 
     private val onStarClickListener: (stock: Stock) -> Unit = { stock ->
         viewModel.updateFavorite(stock.copy(isFavorite = !stock.isFavorite))
-    }
-
-    private val onVisibleTickerChange: (
-        oldTicker: CharSequence, newTicker: String
-    ) -> Unit = { old: CharSequence, new: String ->
-//        val tickers = viewModel.visibleTickers.value.toMutableSet()
-//        tickers.remove(old)
-//        tickers.add(new)
-//        viewModel.visibleTickers.value = tickers
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,43 +43,35 @@ class StocksFragment : Fragment() {
 
 //        Log.d(TAG, "onCreateView: Subscribed to latest prices")
 //        viewModel.subscribeToPricesUpdate(viewModel.visibleTickers)
-        val stockAdapter = StockAdapter(onStarClickListener, onVisibleTickerChange)
-        binding.apply {
+        val stockAdapter = StockAdapter(onStarClickListener)
+//        binding.apply {
+        binding.layoutStockList.apply {
             swipeRefreshLayout.setOnRefreshListener {
                 viewModel.refreshData()
                 showSnackBar("I do nothing. He he he")
                 swipeRefreshLayout.isRefreshing = false
             }
 
-            recyclerViewStocks.apply {
-                adapter = stockAdapter
-                val alterBackground = ResourcesCompat
-                    .getDrawable(resources, R.drawable.bg_light, context.theme)!!
-                val mainBackground = ResourcesCompat
-                    .getDrawable(resources, R.drawable.bg_dark, context.theme)!!
-                addItemDecoration(StockItemDecoration(alterBackground, mainBackground))
+            configureStocks(recyclerViewStocks, stockAdapter)
+            recyclerViewStocks.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                        viewModel.visibleTickers.value =
+                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                }
 
-                addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                    override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                        Log.i(TAG, "onScrollStateChanged: -------------------- $newState")
-                        if (newState == RecyclerView.SCROLL_STATE_IDLE)
-                            viewModel.visibleTickers.value =
-                                stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
-                        super.onScrollStateChanged(recyclerView, newState)
-                    }
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (viewModel.visibleTickers.value.isEmpty())
+                        viewModel.visibleTickers.value =
+                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                }
+            })
 
-                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                        Log.i(TAG, "onScrolled: -------------------- $dy")
-                        if (viewModel.visibleTickers.value.isEmpty())
-                            viewModel.visibleTickers.value =
-                                stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
-                        super.onScrolled(recyclerView, dx, dy)
-                    }
-                })
-                hasFixedSize()
-            }
 
             viewModel.stocks.observe(viewLifecycleOwner) { result ->
+                Log.d(TAG, "onCreateView: $result")
+                Log.d(TAG, "onCreateView: $stockAdapter")
+                Log.d(TAG, "onCreateView: $recyclerViewStocks")
                 if (result.data?.isEmpty() == true)
                     textViewNoStocks.visibility = View.VISIBLE
                 else
@@ -126,6 +107,28 @@ class StocksFragment : Fragment() {
         _binding = null
     }
 
+    private fun configureStocks(
+        recyclerView: RecyclerView,
+        stockAdapter: StockAdapter
+    ) {
+        recyclerView.apply {
+            adapter = stockAdapter
+            val endMargin = resources
+                .getDimensionPixelSize(R.dimen.activity_horizontal_margin)
+            val defaultMargin = resources
+                .getDimensionPixelSize(R.dimen.stock_item_vertical_margin)
+            val alterBackground = ResourcesCompat
+                .getDrawable(resources, R.drawable.bg_light_shape, context.theme)!!
+            val mainBackground = ResourcesCompat
+                .getDrawable(resources, R.drawable.bg_dark_shape, context.theme)!!
+
+            val decoration =
+                StockItemDecoration(endMargin, defaultMargin, alterBackground, mainBackground)
+            addItemDecoration(decoration)
+            hasFixedSize()
+        }
+    }
+
     private fun showSnackBar(message: String) {
         Snackbar.make(
             activity?.findViewById(android.R.id.content)!!,
@@ -138,10 +141,8 @@ class StocksFragment : Fragment() {
         private const val ARG_SECTION_NUMBER = "section_number"
 
         @JvmStatic
-        fun newInstance(sectionNumber: Int): StocksFragment {
-            return StocksFragment().apply {
-                arguments = Bundle().apply { putInt(ARG_SECTION_NUMBER, sectionNumber) }
-            }
+        fun newInstance(sectionNumber: Int) = StocksFragment().apply {
+            arguments = Bundle().apply { putInt(ARG_SECTION_NUMBER, sectionNumber) }
         }
     }
 }

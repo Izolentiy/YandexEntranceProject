@@ -14,6 +14,7 @@ fun <ResultType, RequestType> networkBoundResource(
 ) = flow {
     val data = loadFromDb().first()
 
+    Log.d(TAG, "networkBoundResource: $data")
     val flow = when {
         shouldFetchStocks(data) -> {
             emit(Resource.loading(data))

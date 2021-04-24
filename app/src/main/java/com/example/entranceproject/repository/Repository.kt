@@ -3,7 +3,7 @@ package com.example.entranceproject.repository
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
-import com.example.entranceproject.network.trendingTickers
+import com.example.entranceproject.network.TRENDING_TICKERS
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
@@ -17,10 +17,8 @@ class Repository @Inject constructor(
     private val webSocketHandler: WebSocketHandler
 ) {
     private val stockDao = database.stockDao()
-    lateinit var observablePrices: StateFlow<List<String>>
-//    private val getRelevantTickers: Flow<String>
 
-    fun getStocks(tab: Tab, relevantTickers: /*Flow<List<String>>*/List<String>) = networkBoundResource(
+    fun getStocks(tab: Tab, relevantTickers: List<String>) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
 
         // Fetch stocks info
@@ -32,7 +30,7 @@ class Repository @Inject constructor(
             withContext(Dispatchers.IO) {
                 /* Some issues with my plan, could not fetch data
                 val tickers = service.getMostWatchedTickers().tickers*/
-                val tickers = trendingTickers
+                val tickers = TRENDING_TICKERS
                 tickers.map { async { getStockData(it) } }.awaitAll()
             }
         },
@@ -50,10 +48,13 @@ class Repository @Inject constructor(
         updatePrices = { stocks -> stockDao.updateStocks(stocks) },
     )
 
-    // Methods to work with WebSocket will be used later
     fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
 
     fun closeSocket() { webSocketHandler.closeSocket() }
+
+    suspend fun searchStocks(query: String) {
+        service.search(query)
+    }
 
     suspend fun refreshData() {
 

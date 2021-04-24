@@ -1,6 +1,7 @@
 package com.example.entranceproject.network.model
 
 data class SearchResultDto(
+    val count: Int,
     val result: List<SearchItemDto>
 ) {
     data class SearchItemDto(

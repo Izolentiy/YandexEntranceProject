@@ -17,21 +17,15 @@ import java.text.NumberFormat
 import java.util.*
 
 class StockAdapter(
-    private val onStarClickListener: (Stock) -> Unit,
-    private val onVisibleTickerChange: (CharSequence, String) -> Unit
+    private val onStarClickListener: (Stock) -> Unit
 ) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator()) {
     private lateinit var layoutManager: LinearLayoutManager
-    private var viewHolderCount: Int = 0
-    private val visibleStocks = mutableSetOf<String>()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder {
-        viewHolderCount++
-        visibleStocks
-        return StockViewHolder(
-            ItemStockBinding
-                .inflate(LayoutInflater.from(parent.context), parent, false)
-        )
-    }
+    override fun onCreateViewHolder(
+        parent: ViewGroup, viewType: Int
+    ): StockViewHolder = StockViewHolder(
+        ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+    )
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -58,9 +52,9 @@ class StockAdapter(
 //        Log.d(TAG, "getCurrentVisibleItems: $firstCompletelyVisible")
 //        Log.d(TAG, "getCurrentVisibleItems: $lastCompletelyVisible")
         return try {
-            val visibleItems = currentList.subList(firstVisible, lastVisible+1)
+            val visibleItems = currentList.subList(firstVisible, lastVisible + 1)
             val completelyVisible =
-                currentList.subList(firstCompletelyVisible, lastCompletelyVisible+1)
+                currentList.subList(firstCompletelyVisible, lastCompletelyVisible + 1)
             val visibleTickers = visibleItems.map(Stock::ticker)
             Log.d(TAG, "getCurrentVisibleItems: visibleItems = $visibleTickers")
 //            Log.d(TAG, "getCurrentVisibleItems: ${completelyVisible.map(Stock::ticker)}")
@@ -79,7 +73,6 @@ class StockAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         init {
-//            Log.d(TAG, "StockViewHolder: $viewHolderCount")
             binding.imageViewStar.setOnClickListener {
                 onStarClickListener(getItem(bindingAdapterPosition))
             }
@@ -87,15 +80,7 @@ class StockAdapter(
 
         // Bind stock properties to corresponding view in view holder
         fun bind(stock: Stock) {
-//            visibleStocks.add(stock.ticker)
-//            Log.d(TAG, "bind: $visibleStocks")
-
-//            Log.e(TAG, "bind: ${stock.ticker}, ${stock.country}")
-            // The version below is not acceptable, as it was error-prone
-            /*if (binding.textViewTicker.text != stock.ticker) {
-                onVisibleTickerChange(binding.textViewTicker.text, stock.ticker)
-            }*/
-
+            Log.d(TAG, "bind: ${stock.ticker}")
             binding.apply {
                 Glide.with(itemView)
                     .load(stock.companyLogo)

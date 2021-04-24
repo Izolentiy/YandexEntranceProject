@@ -22,19 +22,10 @@ class MainViewModel @Inject constructor(
     val visibleTickers = MutableStateFlow(listOf<String>())
 
     @ExperimentalCoroutinesApi
-//    val stocks = combine(tab, visibleTickers) { tab, visibleTickers ->
-//        Pair(tab, visibleTickers)
-//    }.flatMapLatest {
-//        Log.d(TAG, "stocks: ${it.second}")
-//        repository.getStocks(it.first, it.second)
-//    }.asLiveData()
     val stocks = switchMap(visibleTickers.asLiveData()) {
         Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
         Log.d(TAG, "tab: ${tab.value}")
         repository.getStocks(tab.value, visibleTickers.value).asLiveData() }
-//    val visibleTickers = mutableListOf<String>()
-//    val stateFlow = MutableStateFlow(visibleTickers)
-//    val stockPrice: StateFlow<SocketUpdate> = repository.openSocket()
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

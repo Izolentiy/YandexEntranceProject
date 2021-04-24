@@ -1,6 +1,6 @@
 package com.example.entranceproject.network
 
-val trendingTickers = listOf(
+val TRENDING_TICKERS = listOf(
     "GME",
     "AMC",
     "PLTR",
@@ -29,6 +29,5 @@ val trendingTickers = listOf(
     "ZOM",
     "SQ",
     "WMT",
-    "RIOT",
-    "VIAC"
+    "RIOT"
 )

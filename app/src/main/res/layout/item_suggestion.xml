@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/text_view_suggestion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/suggestion_item_margin"
+        android:layout_marginBottom="@dimen/suggestion_item_margin"
+        android:background="@drawable/bg_dark_shape"
+        android:gravity="center"
+        android:padding="12dp"
+        android:textSize="12sp"
+        tools:text="Yandex" />
+
+</RelativeLayout>

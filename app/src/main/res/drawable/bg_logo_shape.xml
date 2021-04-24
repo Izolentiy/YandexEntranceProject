@@ -2,11 +2,11 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <size
-        android:width="52dp"
-        android:height="52dp" />
+        android:width="@dimen/stock_item_logo_side"
+        android:height="@dimen/stock_item_logo_side" />
     <solid
         android:color="@color/white"/>
     <corners
-        android:radius="10dp" />
+        android:radius="@dimen/stock_item_logo_corner_radius" />
 
 </shape>
