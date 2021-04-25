@@ -52,18 +52,18 @@ class StocksFragment : Fragment() {
                 swipeRefreshLayout.isRefreshing = false
             }
 
-            configureStocks(recyclerViewStocks, stockAdapter)
+            decorateStockList(recyclerViewStocks, stockAdapter)
             recyclerViewStocks.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                    /*if (newState == RecyclerView.SCROLL_STATE_IDLE)
                         viewModel.visibleTickers.value =
-                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)*/
                 }
 
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    if (viewModel.visibleTickers.value.isEmpty())
+                    /*if (viewModel.visibleTickers.value.isEmpty())
                         viewModel.visibleTickers.value =
-                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)*/
                 }
             })
 
@@ -107,7 +107,7 @@ class StocksFragment : Fragment() {
         _binding = null
     }
 
-    private fun configureStocks(
+    private fun decorateStockList(
         recyclerView: RecyclerView,
         stockAdapter: StockAdapter
     ) {

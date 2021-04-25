@@ -65,7 +65,8 @@
 
     <style name="ToolbarNavigationButton" parent="@style/Widget.AppCompat.Toolbar.Button.Navigation">
         <item name="android:minWidth">0dp</item>
-        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingStart">10dp</item>
     </style>
 
     <style name="Toolbar" parent="@style/Widget.AppCompat.Toolbar">

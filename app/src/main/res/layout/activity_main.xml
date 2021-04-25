@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/coordinator_layout"
+    android:id="@+id/fragment_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.main.MainActivity">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <!--<com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -30,7 +29,7 @@
             app:layout_scrollFlags="scroll|enterAlways"
             app:navigationIcon="@drawable/ic_search">
 
-            <!--<androidx.appcompat.widget.SearchView
+            &lt;!&ndash;<androidx.appcompat.widget.SearchView
                 android:id="@+id/search_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -43,7 +42,7 @@
                 app:queryBackground="@null"
                 app:queryHint="Find company or ticker"
                 app:searchHintIcon="@null"
-                app:searchIcon="@drawable/ic_search" />-->
+                app:searchIcon="@drawable/ic_search" />&ndash;&gt;
 
             <TextView
                 android:id="@+id/text_view_hint"
@@ -66,5 +65,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+-->
+</FrameLayout>
