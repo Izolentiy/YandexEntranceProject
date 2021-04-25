@@ -28,6 +28,8 @@ class StockAdapter(
     )
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        Log.e(TAG, "bind: green=${R.color.green}")
+        Log.e(TAG, "bind: red=${R.color.red}")
         layoutManager = recyclerView.layoutManager as LinearLayoutManager
     }
 
@@ -36,10 +38,6 @@ class StockAdapter(
         if (currentItem != null)
             holder.bind(currentItem)
     }
-
-//    override fun getItemCount(): Int {
-//        TODO("Not yet implemented")
-//    }
 
     fun getCurrentVisibleItems(): List<Stock> {
         val firstVisible = layoutManager.findFirstVisibleItemPosition()
@@ -82,6 +80,7 @@ class StockAdapter(
         fun bind(stock: Stock) {
             Log.d(TAG, "bind: ${stock.ticker}")
             binding.apply {
+                // Company logo
                 Glide.with(itemView)
                     .load(stock.companyLogo)
                     .error(R.drawable.ic_logo_placeholder)
@@ -89,19 +88,15 @@ class StockAdapter(
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .into(imageLogo)
 
-                when (stock.isFavorite) {
-                    true -> imageViewStar.setImageDrawable(
-                        ResourcesCompat.getDrawable(
-                            itemView.resources, R.drawable.ic_star_colored, itemView.context.theme
-                        )
+                // Star icon
+                val starIcon = if (stock.isFavorite) R.drawable.ic_star_colored else R.drawable.ic_star
+                imageViewStar.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        itemView.resources, starIcon, itemView.context.theme
                     )
-                    false -> imageViewStar.setImageDrawable(
-                        ResourcesCompat.getDrawable(
-                            itemView.resources, R.drawable.ic_star, itemView.context.theme
-                        )
-                    )
-                }
+                )
 
+                // Company name and stock ticker
                 textViewCompanyName.text = stock.companyName
                 textViewTicker.text = stock.ticker
 
@@ -112,16 +107,12 @@ class StockAdapter(
                 textViewCurrentPrice.text = format.format(stock.currentPrice)
                 textViewDayDelta.text = format.format(stock.dailyDelta)
 
-                if (stock.dailyDelta >= 0) textViewDayDelta.setTextColor(
-                    ResourcesCompat.getColor(
-                        itemView.resources, R.color.green, itemView.context.theme
-                    )
-                )
-                else textViewDayDelta.setTextColor(
-                    ResourcesCompat.getColor(
-                        itemView.resources, R.color.red, itemView.context.theme
-                    )
-                )
+                // Daily delta color
+                val deltaColor = if (stock.dailyDelta >= 0) R.color.green else R.color.red
+                Log.e(TAG, "bind: final=$deltaColor")
+                textViewDayDelta.setTextColor(ResourcesCompat.getColor(
+                    itemView.resources, deltaColor, itemView.context.theme
+                ))
             }
         }
     }

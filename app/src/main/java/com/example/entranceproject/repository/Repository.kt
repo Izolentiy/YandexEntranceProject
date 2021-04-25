@@ -1,5 +1,6 @@
 package com.example.entranceproject.repository
 
+import android.util.Log
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
@@ -8,7 +9,10 @@ import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class Repository @Inject constructor(
@@ -52,8 +56,25 @@ class Repository @Inject constructor(
 
     fun closeSocket() { webSocketHandler.closeSocket() }
 
-    suspend fun searchStocks(query: String) {
-        service.search(query)
+    suspend fun searchStocks(query: String) = flow {
+        Log.e(TAG, "searchStocks: --------------------------------------START")
+        try {
+            emit(Resource.loading(emptyList<Stock>()))
+            Log.d(TAG, "searchStocks: --------------------------------------LOADING")
+            val response = service.search(query)
+            Log.d(TAG, "searchStocks: ${response.count}")
+
+            val stocks = response.result.map {
+                if (it == response.result.first()) getStockData(it.symbol)
+                else Stock(ticker=it.symbol, companyName=it.description)
+            }
+            emit(Resource.success(stocks))
+            Log.e(TAG, "searchStocks: --------------------------------------YES")
+        } catch (exception: Throwable) {
+            Log.e(TAG, "searchStocks: $exception")
+            emit(Resource.error(emptyList<Stock>(), exception))
+            Log.e(TAG, "searchStocks: --------------------------------------NO")
+        }
     }
 
     suspend fun refreshData() {

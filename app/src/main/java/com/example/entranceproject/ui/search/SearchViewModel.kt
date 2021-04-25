@@ -8,7 +8,7 @@ import com.example.entranceproject.repository.Resource
 import com.example.entranceproject.ui.main.MainViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,8 +23,10 @@ class SearchViewModel @Inject constructor(
     private val _stocks = MutableLiveData<Resource<List<Stock>>>()
     val stocks: LiveData<Resource<List<Stock>>> get() = _stocks
 
-    fun searchStocks(query: String) =
-        viewModelScope.launch(Dispatchers.IO) { repository.searchStocks(query) }
+    fun searchStocks() =
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.searchStocks(query.value).collect { _stocks.postValue(it) }
+        }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

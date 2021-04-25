@@ -1,10 +1,13 @@
 package com.example.entranceproject.ui.search
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -16,33 +19,25 @@ import com.example.entranceproject.data.SUGGESTIONS
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.FragmentSearchBinding
 import com.example.entranceproject.repository.Resource
-import com.example.entranceproject.ui.main.MainViewModel
 import com.example.entranceproject.ui.stocks.StockAdapter
 import com.example.entranceproject.ui.stocks.StockItemDecoration
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class SearchFragment : Fragment() {
+class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private var _binding: FragmentSearchBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: SearchViewModel by viewModels()
     private var showSuggestions = true
+
+    private val onSuggestionClickListener: (suggestion: CharSequence) -> Unit = { suggestion ->
+        binding.searchView.setQuery(suggestion, false)
+    }
 
     private val onStarClickListener: (stock: Stock) -> Unit = { stock ->
         viewModel.updateFavorite(stock.copy(isFavorite = !stock.isFavorite))
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // This callback will only be called when MyFragment is at least Started.
-        /*val callback = requireActivity().onBackPressedDispatcher.addCallback(this) {
-            // Handle the back button event
-            TODO("Do something")
-        }*/
-
     }
 
     override fun onCreateView(
@@ -51,16 +46,30 @@ class SearchFragment : Fragment() {
     ): View {
         _binding = FragmentSearchBinding.inflate(inflater, container, false)
 
-        binding.searchBar.apply {
-            setNavigationOnClickListener {
-                showSuggestions = !showSuggestions
-                updateVisibility()
+        // Configure search view
+        binding.apply {
+            searchBar.setNavigationOnClickListener { requireActivity().onBackPressed() }
+
+            searchView.requestFocus()
+            searchView.setOnQueryTextListener(this@SearchFragment)
+            searchView.setOnQueryTextFocusChangeListener { view, hasFocus ->
+                if (hasFocus) {
+                    searchView.queryHint = ""
+                    val inputMethodManager = requireActivity()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                    inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+                } else {
+                    val inputMethodManager = requireActivity()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                    inputMethodManager.hideSoftInputFromWindow(searchView.windowToken, 0)
+                    searchView.queryHint = "Find company or ticker"
+                }
             }
         }
 
         // Configure completion hints
-        val suggestionItemAdapter = StringSuggestionItemAdapter()
-        val recentItemAdapter = StringSuggestionItemAdapter()
+        val suggestionItemAdapter = HintItemAdapter(onSuggestionClickListener)
+        val recentItemAdapter = HintItemAdapter(onSuggestionClickListener)
         binding.layoutSearchSuggestions.apply {
             // Suggestion list
             decorateSuggestionList(recyclerViewPopular)
@@ -130,11 +139,35 @@ class SearchFragment : Fragment() {
         return binding.root
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Hide keyboard when the user collapses an app
+        val inputMethodManager = requireActivity()
+            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 
+    // Search query change listener methods
+    override fun onQueryTextSubmit(query: String?): Boolean {
+        viewModel.searchStocks()
+        showSuggestions = false
+        updateVisibility()
+        return true
+    }
+
+    override fun onQueryTextChange(newText: String?): Boolean {
+        viewModel.query.value = newText ?: "Error"
+        if (newText?.isEmpty() == true)
+            showSuggestions = true; updateVisibility()
+        return true
+    }
+
+    // Helper methods
     private fun updateVisibility() {
         binding.layoutSearchSuggestions.root
             .visibility = if (showSuggestions) View.VISIBLE else View.GONE
@@ -145,9 +178,7 @@ class SearchFragment : Fragment() {
             .visibility = if (showSuggestions) View.GONE else View.VISIBLE
     }
 
-    private fun decorateStockList(
-        recyclerView: RecyclerView
-    ) {
+    private fun decorateStockList(recyclerView: RecyclerView) {
         recyclerView.apply {
             val endMargin = resources
                 .getDimensionPixelSize(R.dimen.activity_horizontal_margin)
@@ -165,9 +196,7 @@ class SearchFragment : Fragment() {
         }
     }
 
-    private fun decorateSuggestionList(
-        recyclerView: RecyclerView
-    ) {
+    private fun decorateSuggestionList(recyclerView: RecyclerView) {
         recyclerView.apply {
             layoutManager =
                 StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.HORIZONTAL)

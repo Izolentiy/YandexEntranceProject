@@ -11,7 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
 import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
-import com.example.entranceproject.databinding.FragmentStocksBinding
+import com.example.entranceproject.databinding.LayoutStockListBinding
 import com.example.entranceproject.repository.Resource
 import com.example.entranceproject.ui.main.MainViewModel
 import com.google.android.material.snackbar.Snackbar
@@ -21,7 +21,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @AndroidEntryPoint
 class StocksFragment : Fragment() {
 
-    private var _binding: FragmentStocksBinding? = null
+    private var _binding: LayoutStockListBinding? = null
     private val binding get() = _binding!!
     private val viewModel: MainViewModel by viewModels()
 
@@ -39,13 +39,13 @@ class StocksFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentStocksBinding.inflate(inflater, container, false)
+        _binding = LayoutStockListBinding.inflate(inflater, container, false)
 
 //        Log.d(TAG, "onCreateView: Subscribed to latest prices")
 //        viewModel.subscribeToPricesUpdate(viewModel.visibleTickers)
         val stockAdapter = StockAdapter(onStarClickListener)
 //        binding.apply {
-        binding.layoutStockList.apply {
+        binding.apply {
             swipeRefreshLayout.setOnRefreshListener {
                 viewModel.refreshData()
                 showSnackBar("I do nothing. He he he")

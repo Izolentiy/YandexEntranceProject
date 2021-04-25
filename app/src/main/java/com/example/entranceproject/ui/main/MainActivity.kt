@@ -11,39 +11,12 @@ import com.example.entranceproject.ui.search.SearchFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
-
-    private val viewModel: MainViewModel by viewModels()
-    private lateinit var binding: ActivityMainBinding
-
-    private val pagerFragment: PagerFragment by lazy { PagerFragment.newInstance() }
-    private val searchFragment: SearchFragment by lazy { SearchFragment.newInstance() }
+class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-//        supportFragmentManager.beginTransaction().addToBackStack(null)
-//            .replace(R.id.fragment_container, searchFragment).commit()
-        supportFragmentManager.beginTransaction().addToBackStack(null)
-            .replace(R.id.fragment_container, pagerFragment).commit()
-    }
-
-    // Search query change listener methods
-    override fun onQueryTextSubmit(query: String?): Boolean {
-//        viewModel.searchStocks(query.orEmpty())
-        return true
-    }
-
-    override fun onQueryTextChange(newText: String?): Boolean {
-        return true
-    }
-
-    override fun onBackPressed() {
-        super.onBackPressed()
-        supportFragmentManager.getBackStackEntryAt(0)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, PagerFragment.newInstance()).commit()
     }
 
     companion object {

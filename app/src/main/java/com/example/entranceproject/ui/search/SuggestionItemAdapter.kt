@@ -9,8 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.entranceproject.data.model.Suggestion
 import com.example.entranceproject.databinding.ItemSuggestionBinding
 
-class SuggestionItemAdapter :
-    ListAdapter<Suggestion, SuggestionItemAdapter.SuggestionItemViewHolder>(SuggestionComparator) {
+class SuggestionItemAdapter(
+    private val onSuggestionClickListener: (CharSequence) -> Unit
+) : ListAdapter<Suggestion,
+        SuggestionItemAdapter.SuggestionItemViewHolder>(SuggestionComparator) {
 
     override fun onCreateViewHolder(
         parent: ViewGroup, viewType: Int
@@ -24,8 +26,15 @@ class SuggestionItemAdapter :
         holder.bind(currentItem)
     }
 
-    inner class SuggestionItemViewHolder(private val binding: ItemSuggestionBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    inner class SuggestionItemViewHolder(
+        private val binding: ItemSuggestionBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        init {
+            binding.textViewSuggestion.apply {
+                setOnClickListener { onSuggestionClickListener(text) }
+            }
+        }
 
         fun bind(suggestion: Suggestion) {
             binding.textViewSuggestion.text = suggestion.text
