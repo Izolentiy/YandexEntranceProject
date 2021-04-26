@@ -9,10 +9,7 @@ import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 class Repository @Inject constructor(
@@ -58,26 +55,31 @@ class Repository @Inject constructor(
     fun closeSocket() { webSocketHandler.closeSocket() }
 
     suspend fun searchStocks(query: String) = flow {
-        Log.e(TAG, "searchStocks: --------------------------------------START")
+        Log.e(TAG, "searchStocks: state = START")
         try {
+            Log.d(TAG, "searchStocks: state = LOADING")
             emit(Resource.loading(emptyList<Stock>()))
-            Log.d(TAG, "searchStocks: --------------------------------------LOADING")
-            val response = service.search(query)
-            Log.d(TAG, "searchStocks: ${response.count}")
 
-            val stocks = response.result
+            val response = service.search(query).result
+            emit(Resource.success(emptyList<Stock>()))
+            TODO("Distinct found 'tickers' properly")
+            val found = response
                 .filter { it.type == "Common Stock" || it.type == "GDR" }
                 .distinctBy { it.description }
-            Log.e(TAG, "searchStocks: ---------------------------$stocks")
-            emit(Resource.success(stocks.map { getStockData(it.symbol) }.filter { it.currentPrice != 0.0 }))
-            Log.e(TAG, "searchStocks: --------------------------------------YES")
+            Log.d(TAG, "searchStocks: found = $found")
+
+            val stocks = found
+                .map { getStockData(it.symbol) }
+                .filter { it.currentPrice != 0.0 }
+            stockDao.insertStocks(stocks)
+
+            Log.d(TAG, "searchStocks: state = SUCCESS")
+            emit(Resource.success(stocks))
         } catch (exception: Throwable) {
             Log.e(TAG, "searchStocks: $exception")
+            Log.d(TAG, "searchStocks: state = FAILURE")
             emit(Resource.error(emptyList<Stock>(), exception))
-            Log.e(TAG, "searchStocks: --------------------------------------NO")
         }
-//                if (it == response.result.first()) getStockData(it.symbol)
-//                else Stock(ticker=it.symbol, companyName=it.description)
     }
 
     suspend fun refreshData() {
@@ -105,12 +107,13 @@ class Repository @Inject constructor(
         companyData.await().let { company ->
             quoteData.await().let { quote ->
                 return@coroutineScope Stock(
-                    ticker = ticker, companyName = company.name, companyLogo = company.logo,
+                    ticker = company.ticker, companyName = company.name, companyLogo = company.logo,
                     webUrl = company.weburl, country = company.country, currency = company.currency,
                     currentPrice = quote.c, openPrice = quote.o, isFavorite = false
                 )
             }
         }
+
     }
 
     companion object {

@@ -104,7 +104,7 @@ class StockAdapter(
                 val currency = try {
                     stock.country?.let { country ->
                         Currency.getInstance(Locale(country, country)).symbol.last()
-                    } ?: ""
+                    } ?: "$"
                 } catch (error: IllegalArgumentException) {
                     ""
                 }
