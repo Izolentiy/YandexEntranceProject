@@ -1,5 +1,6 @@
 package com.example.entranceproject.ui.stocks
 
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -9,6 +10,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.CenterInside
 import com.bumptech.glide.load.resource.bitmap.FitCenter
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -74,7 +77,7 @@ class StockAdapter(
             binding.apply {
                 // Company logo
                 val logoImage =
-                    if (stock.webUrl != null) { prepareLogoUrl(stock.webUrl) }
+                    if (stock.webUrl?.isNotEmpty() == true) prepareLogoUrl(stock)
                     else stock.companyLogo ?: ""
 
                 val radius = itemView.resources
@@ -102,9 +105,11 @@ class StockAdapter(
 
                 // Get currency symbol
                 val currency = try {
-                    Currency.getInstance(Locale(stock.country!!, stock.country)).symbol.last()
+                    Currency.getInstance(stock.currency).symbol
                 } catch (error: IllegalArgumentException) {
                     ""
+                } catch (error: Exception) {
+                    Currency.getInstance(Locale(stock.country!!, stock.country)).symbol.last()
                 }
 
                 // Price and day delta
@@ -123,12 +128,13 @@ class StockAdapter(
             }
         }
 
-        private fun prepareLogoUrl(url: String): String {
+        private fun prepareLogoUrl(stock: Stock): String {
             // Replace "/us/en" and "en-us" parts
             // to make urls recognizable for clearbit.com
             // "https://squareup.com/us/en"
             // "https://www.microsoft.com/en-us"
-            val outUrl = "${url.replaceAfter(".com", "")}?size=52"
+            val outUrl = "${stock.webUrl?.replaceAfter(".com", "")}?size=52"
+            if (stock.currency == "RUB") outUrl.replace(".com", ".ru")
             return "$LOGOS_URL$outUrl"
         }
 

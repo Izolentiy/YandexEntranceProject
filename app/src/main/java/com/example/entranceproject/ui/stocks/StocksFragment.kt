@@ -13,7 +13,7 @@ import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.LayoutStockListBinding
 import com.example.entranceproject.repository.Resource
-import com.example.entranceproject.ui.main.MainViewModel
+import com.example.entranceproject.ui.pager.PagerViewModel
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,7 +23,7 @@ class StocksFragment : Fragment() {
 
     private var _binding: LayoutStockListBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: PagerViewModel by viewModels()
 
     private val onStarClickListener: (stock: Stock) -> Unit = { stock ->
         viewModel.updateFavorite(stock.copy(isFavorite = !stock.isFavorite))

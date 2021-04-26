@@ -1,9 +1,15 @@
 package com.example.entranceproject.data.model
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "stocks_table")
+@Entity(
+    tableName = "stocks_table",
+    foreignKeys = [ForeignKey(
+        entity = Ticker::class, parentColumns = ["symbol"], childColumns = ["ticker"]
+    )]
+)
 data class Stock(
     @PrimaryKey
     val ticker: String,

@@ -136,6 +136,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                         textViewNoStocks.visibility = View.GONE
                         progressBar.visibility = View.GONE
 
+                        stockAdapter.submitList(result.data)
                         textViewLabel.text = getString(R.string.stocks)
                     }
                 }

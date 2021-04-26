@@ -1,11 +1,10 @@
-package com.example.entranceproject.ui.main
+package com.example.entranceproject.ui.pager
 
 import android.util.Log
 import androidx.lifecycle.*
 import androidx.lifecycle.Transformations.switchMap
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
-import com.example.entranceproject.ui.pager.Tab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,7 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class PagerViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
@@ -25,7 +24,7 @@ class MainViewModel @Inject constructor(
     val stocks = switchMap(visibleTickers.asLiveData()) {
         Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
         Log.d(TAG, "tab: ${tab.value}")
-        repository.getStocks(tab.value, visibleTickers.value).asLiveData() }
+        repository.getStocks(tab.value).asLiveData() }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
@@ -49,7 +48,7 @@ class MainViewModel @Inject constructor(
     }
 
     companion object {
-        private val TAG = "${MainViewModel::class.java.simpleName}_TAG"
+        private val TAG = "${PagerViewModel::class.java.simpleName}_TAG"
     }
 
 }
