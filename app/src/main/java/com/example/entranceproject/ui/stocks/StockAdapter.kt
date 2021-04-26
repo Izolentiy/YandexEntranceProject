@@ -102,7 +102,9 @@ class StockAdapter(
 
                 // Get currency symbol
                 val currency = try {
-                    Currency.getInstance(Locale(stock.country!!, stock.country)).symbol.last()
+                    stock.country?.let { country ->
+                        Currency.getInstance(Locale(country, country)).symbol.last()
+                    } ?: ""
                 } catch (error: IllegalArgumentException) {
                     ""
                 }
@@ -128,8 +130,9 @@ class StockAdapter(
             // to make urls recognizable for clearbit.com
             // "https://squareup.com/us/en"
             // "https://www.microsoft.com/en-us"
-            val outUrl = "${url.replaceAfter(".com", "")}?size=52"
-            return "$LOGOS_URL$outUrl"
+            val comOut = url.replaceAfter(".com", "")
+            val ruOut = "${comOut.replaceAfter(".ru", "")}?size=52"
+            return "$LOGOS_URL$ruOut"
         }
 
     }

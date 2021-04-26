@@ -65,18 +65,19 @@ class Repository @Inject constructor(
             val response = service.search(query)
             Log.d(TAG, "searchStocks: ${response.count}")
 
-            val stocks = response.result.map {
-                Stock(ticker=it.symbol, companyName=it.description)
-//                if (it == response.result.first()) getStockData(it.symbol)
-//                else Stock(ticker=it.symbol, companyName=it.description)
-            }
-            emit(Resource.success(stocks))
+            val stocks = response.result
+                .filter { it.type == "Common Stock" || it.type == "GDR" }
+                .distinctBy { it.description }
+            Log.e(TAG, "searchStocks: ---------------------------$stocks")
+            emit(Resource.success(stocks.map { getStockData(it.symbol) }.filter { it.currentPrice != 0.0 }))
             Log.e(TAG, "searchStocks: --------------------------------------YES")
         } catch (exception: Throwable) {
             Log.e(TAG, "searchStocks: $exception")
             emit(Resource.error(emptyList<Stock>(), exception))
             Log.e(TAG, "searchStocks: --------------------------------------NO")
         }
+//                if (it == response.result.first()) getStockData(it.symbol)
+//                else Stock(ticker=it.symbol, companyName=it.description)
     }
 
     suspend fun refreshData() {
@@ -84,6 +85,10 @@ class Repository @Inject constructor(
     }
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
+
+    private suspend fun fetchStocks(ticker: String) = coroutineScope {
+
+    }
 
     private suspend fun updateStockPrice(ticker: String) = coroutineScope {
         val quoteData = async { service.getQuoteData(ticker) }
