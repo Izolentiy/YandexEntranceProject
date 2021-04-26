@@ -9,11 +9,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.FitCenter
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.ItemStockBinding
-import java.text.NumberFormat
+import com.example.entranceproject.network.FinnhubService.Companion.LOGOS_URL
 import java.util.*
 
 class StockAdapter(
@@ -27,16 +29,14 @@ class StockAdapter(
         ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
     )
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        Log.e(TAG, "bind: green=${R.color.green}")
-        Log.e(TAG, "bind: red=${R.color.red}")
-        layoutManager = recyclerView.layoutManager as LinearLayoutManager
-    }
-
     override fun onBindViewHolder(holder: StockViewHolder, position: Int) {
         val currentItem = getItem(position)
         if (currentItem != null)
             holder.bind(currentItem)
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        layoutManager = recyclerView.layoutManager as LinearLayoutManager
     }
 
     fun getCurrentVisibleItems(): List<Stock> {
@@ -45,17 +45,11 @@ class StockAdapter(
         val firstCompletelyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
         val lastCompletelyVisible = layoutManager.findLastCompletelyVisibleItemPosition()
 
-        Log.e(TAG, "getCurrentVisibleItems: firstVisible = $firstVisible")
-        Log.e(TAG, "getCurrentVisibleItems: lastVisible  = $lastVisible")
-//        Log.d(TAG, "getCurrentVisibleItems: $firstCompletelyVisible")
-//        Log.d(TAG, "getCurrentVisibleItems: $lastCompletelyVisible")
         return try {
             val visibleItems = currentList.subList(firstVisible, lastVisible + 1)
             val completelyVisible =
                 currentList.subList(firstCompletelyVisible, lastCompletelyVisible + 1)
             val visibleTickers = visibleItems.map(Stock::ticker)
-            Log.d(TAG, "getCurrentVisibleItems: visibleItems = $visibleTickers")
-//            Log.d(TAG, "getCurrentVisibleItems: ${completelyVisible.map(Stock::ticker)}")
             visibleItems
         } catch (error: Exception) {
             Log.e(TAG, "getCurrentVisibleItems: $error")
@@ -76,20 +70,26 @@ class StockAdapter(
             }
         }
 
-        // Bind stock properties to corresponding view in view holder
         fun bind(stock: Stock) {
-            Log.d(TAG, "bind: ${stock.ticker}")
             binding.apply {
                 // Company logo
+                val logoImage =
+                    if (stock.webUrl != null) { prepareLogoUrl(stock.webUrl) }
+                    else stock.companyLogo ?: ""
+
+                val radius = itemView.resources
+                    .getDimensionPixelSize(R.dimen.stock_item_logo_corner_radius)
+
                 Glide.with(itemView)
-                    .load(stock.companyLogo)
-                    .error(R.drawable.ic_logo_placeholder)
-                    .fitCenter()
+                    .load(logoImage)
+                    .error(R.drawable.bg_logo_dark_shape)
+                    .transform(FitCenter(), RoundedCorners(radius))
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .into(imageLogo)
 
                 // Star icon
-                val starIcon = if (stock.isFavorite) R.drawable.ic_star_colored else R.drawable.ic_star
+                val starIcon =
+                    if (stock.isFavorite) R.drawable.ic_star_colored else R.drawable.ic_star
                 imageViewStar.setImageDrawable(
                     ResourcesCompat.getDrawable(
                         itemView.resources, starIcon, itemView.context.theme
@@ -100,21 +100,38 @@ class StockAdapter(
                 textViewCompanyName.text = stock.companyName
                 textViewTicker.text = stock.ticker
 
-                // For a while only dollars
-                val format = NumberFormat.getCurrencyInstance(Locale.US)
-                format.currency = Currency.getInstance("USD")
+                // Get currency symbol
+                val currency = try {
+                    Currency.getInstance(Locale(stock.country!!, stock.country)).symbol.last()
+                } catch (error: IllegalArgumentException) {
+                    ""
+                }
 
-                textViewCurrentPrice.text = format.format(stock.currentPrice)
-                textViewDayDelta.text = format.format(stock.dailyDelta)
+                // Price and day delta
+                textViewCurrentPrice.text = itemView.resources
+                    .getString(R.string.price, currency, stock.currentPrice)
+                textViewDayDelta.text = itemView.resources
+                    .getString(R.string.price, currency, stock.dailyDelta)
 
                 // Daily delta color
                 val deltaColor = if (stock.dailyDelta >= 0) R.color.green else R.color.red
-                Log.e(TAG, "bind: final=$deltaColor")
-                textViewDayDelta.setTextColor(ResourcesCompat.getColor(
-                    itemView.resources, deltaColor, itemView.context.theme
-                ))
+                textViewDayDelta.setTextColor(
+                    ResourcesCompat.getColor(
+                        itemView.resources, deltaColor, itemView.context.theme
+                    )
+                )
             }
         }
+
+        private fun prepareLogoUrl(url: String): String {
+            // Replace "/us/en" and "en-us" parts
+            // to make urls recognizable for clearbit.com
+            // "https://squareup.com/us/en"
+            // "https://www.microsoft.com/en-us"
+            val outUrl = "${url.replaceAfter(".com", "")}?size=52"
+            return "$LOGOS_URL$outUrl"
+        }
+
     }
 
     class StockComparator : DiffUtil.ItemCallback<Stock>() {

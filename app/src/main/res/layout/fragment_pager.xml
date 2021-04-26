@@ -32,7 +32,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:text="Find company or ticker"
+                android:text="@string/search_hint"
                 android:textSize="16sp" />
 
         </androidx.appcompat.widget.Toolbar>

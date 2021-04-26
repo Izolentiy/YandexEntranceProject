@@ -4,7 +4,7 @@
     <size
         android:width="@dimen/stock_item_logo_side"
         android:height="@dimen/stock_item_logo_side" />
-    <solid android:color="@color/white"/>
-    <corners android:radius="@dimen/stock_item_logo_corner_radius" />
+    <corners android:radius="10dp" />
+    <solid android:color="@color/dark_grey" />
 
 </shape>

@@ -15,8 +15,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, PagerFragment.newInstance()).commit()
+        if (supportFragmentManager.backStackEntryCount == 0)
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, PagerFragment.newInstance()).commit()
     }
 
     companion object {

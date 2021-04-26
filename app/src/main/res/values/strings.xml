@@ -2,5 +2,14 @@
     <string name="app_name">EntranceProject</string>
     <string name="stocks">Stocks</string>
     <string name="favorite">Favorite</string>
+
+    <string name="price" formatted="false">%1s%2.2f</string>
+
+    <string name="stocks_found">Stocks found (%1$d)</string>
     <string name="show_more">Show more</string>
+    <string name="search_hint">Find company or ticker</string>
+    <string name="popular_requests">Popular requests</string>
+    <string name="recent_searches_label">You\'ve searched for this</string>
+    <string name="no_stocks">No Stocks</string>
+    <string name="an_error_occurred">An error occurred</string>
 </resources>

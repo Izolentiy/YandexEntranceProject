@@ -52,7 +52,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
 
             searchView.requestFocus()
             searchView.setOnQueryTextListener(this@SearchFragment)
-            searchView.setOnQueryTextFocusChangeListener { view, hasFocus ->
+            searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
                 if (hasFocus) {
                     searchView.queryHint = ""
                     val inputMethodManager = requireActivity()
@@ -107,6 +107,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
             })
 
+            val textViewLabel = binding.appbarSearchResult.textViewLabel
             viewModel.stocks.observe(viewLifecycleOwner) { result ->
                 if (result.data?.isEmpty() == true)
                     textViewNoStocks.visibility = View.VISIBLE
@@ -118,11 +119,14 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                         textViewError.visibility = View.GONE
                         progressBar.visibility = View.GONE
                         stockAdapter.submitList(result.data)
+
+                        textViewLabel.text = getString(R.string.stocks_found, result.data?.size)
                     }
                     Resource.Status.LOADING -> {
                         textViewError.visibility = View.GONE
 //                        if (!swipeRefreshLayout.isRefreshing)
                         progressBar.visibility = View.VISIBLE
+                        textViewLabel.text = getString(R.string.stocks)
                     }
                     Resource.Status.ERROR -> {
                         swipeRefreshLayout.isRefreshing = false
@@ -131,6 +135,8 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                         textViewError.visibility = View.VISIBLE
                         textViewNoStocks.visibility = View.GONE
                         progressBar.visibility = View.GONE
+
+                        textViewLabel.text = getString(R.string.stocks)
                     }
                 }
             }
@@ -161,7 +167,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     override fun onQueryTextChange(newText: String?): Boolean {
-        viewModel.query.value = newText ?: "Error"
+        viewModel.updateQuery(newText ?: "Error")
         if (newText?.isEmpty() == true)
             showSuggestions = true; updateVisibility()
         return true

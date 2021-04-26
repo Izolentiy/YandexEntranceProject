@@ -32,9 +32,10 @@ class Repository @Inject constructor(
         },
         fetchStocks = {
             withContext(Dispatchers.IO) {
-                /* Some issues with my plan, could not fetch data
-                val tickers = service.getMostWatchedTickers().tickers*/
+                // Get trending tickers from Mboum.com
+                /*val tickers = service.getMostWatchedTickers().tickers*/
                 val tickers = TRENDING_TICKERS
+//                Log.e(TAG, "getStocks: $tickers")
                 tickers.map { async { getStockData(it) } }.awaitAll()
             }
         },
@@ -65,8 +66,9 @@ class Repository @Inject constructor(
             Log.d(TAG, "searchStocks: ${response.count}")
 
             val stocks = response.result.map {
-                if (it == response.result.first()) getStockData(it.symbol)
-                else Stock(ticker=it.symbol, companyName=it.description)
+                Stock(ticker=it.symbol, companyName=it.description)
+//                if (it == response.result.first()) getStockData(it.symbol)
+//                else Stock(ticker=it.symbol, companyName=it.description)
             }
             emit(Resource.success(stocks))
             Log.e(TAG, "searchStocks: --------------------------------------YES")
@@ -99,7 +101,7 @@ class Repository @Inject constructor(
             quoteData.await().let { quote ->
                 return@coroutineScope Stock(
                     ticker = ticker, companyName = company.name, companyLogo = company.logo,
-                    country = company.country, currency = company.currency,
+                    webUrl = company.weburl, country = company.country, currency = company.currency,
                     currentPrice = quote.c, openPrice = quote.o, isFavorite = false
                 )
             }

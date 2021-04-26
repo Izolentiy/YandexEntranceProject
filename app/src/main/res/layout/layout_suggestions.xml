@@ -15,7 +15,7 @@
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:text="Popular requests"
+        android:text="@string/popular_requests"
         android:theme="@style/MediumText" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -37,7 +37,7 @@
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
-        android:text="You've searched for this"
+        android:text="@string/recent_searches_label"
         android:theme="@style/MediumText" />
 
     <androidx.recyclerview.widget.RecyclerView

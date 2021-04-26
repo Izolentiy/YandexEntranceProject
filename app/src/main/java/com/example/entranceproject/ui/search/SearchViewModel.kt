@@ -17,7 +17,8 @@ class SearchViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    val query = MutableStateFlow("")
+    private val query = MutableStateFlow("")
+//    private val showSuggestions = MutableStateFlow(true)
 
     // Encapsulation...
     private val _stocks = MutableLiveData<Resource<List<Stock>>>()
@@ -27,6 +28,8 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repository.searchStocks(query.value).collect { _stocks.postValue(it) }
         }
+
+    fun updateQuery(newQuery: String) { query.value = newQuery }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

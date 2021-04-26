@@ -9,6 +9,7 @@ data class Stock(
     val ticker: String,
     val companyName: String? = "",
     val companyLogo: String? = "",
+    val webUrl: String? = "",
     val country: String? = "",
     val currency: String? = "",
     val currentPrice: Double = 0.0,

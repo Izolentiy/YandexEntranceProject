@@ -9,6 +9,7 @@ interface FinnhubService {
     companion object {
         const val WEB_SOCKET_URL = "wss://ws.finnhub.io"
         const val BASE_URL = "https://finnhub.io/api/v1/"
+        const val LOGOS_URL = "https://logo.clearbit.com/"
         const val TOKEN_PARAMETER = "X-Finnhub-Token"
         const val FINNHUB_KEY = BuildConfig.FINNHUB_KEY
         const val MBOUM_KEY = BuildConfig.MBOUM_KEY

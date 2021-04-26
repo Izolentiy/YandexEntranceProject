@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="12dp"
-        android:text="No Stocks"
+        android:text="@string/no_stocks"
         android:theme="@style/MediumText"
         android:visibility="gone"
         tools:visibility="visible" />
@@ -24,7 +24,7 @@
         android:layout_below="@id/text_view_no_stocks"
         android:layout_centerHorizontal="true"
         android:layout_margin="16dp"
-        android:text="An error occurred"
+        android:text="@string/an_error_occurred"
         android:theme="@style/MediumText"
         android:visibility="gone"
         tools:visibility="visible" />
