@@ -74,7 +74,7 @@ class StockAdapter(
             binding.apply {
                 // Company logo
                 val logoImage =
-                    if (stock.webUrl != null) { prepareLogoUrl(stock.webUrl) }
+                    if (stock.webUrl?.isNotEmpty() == true) prepareLogoUrl(stock)
                     else stock.companyLogo ?: ""
 
                 val radius = itemView.resources
@@ -125,14 +125,14 @@ class StockAdapter(
             }
         }
 
-        private fun prepareLogoUrl(url: String): String {
+        private fun prepareLogoUrl(stock: Stock): String {
             // Replace "/us/en" and "en-us" parts
             // to make urls recognizable for clearbit.com
             // "https://squareup.com/us/en"
             // "https://www.microsoft.com/en-us"
-            val comOut = url.replaceAfter(".com", "")
-            val ruOut = "${comOut.replaceAfter(".ru", "")}?size=52"
-            return "$LOGOS_URL$ruOut"
+            val outUrl = "${stock.webUrl?.replaceAfter(".com", "")}?size=52"
+            if (stock.currency == "RUB") outUrl.replace(".com", ".ru")
+            return "$LOGOS_URL$outUrl"
         }
 
     }

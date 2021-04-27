@@ -1,11 +1,9 @@
 package com.example.entranceproject.ui.search
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
 import com.example.entranceproject.repository.Resource
-import com.example.entranceproject.ui.main.MainViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*

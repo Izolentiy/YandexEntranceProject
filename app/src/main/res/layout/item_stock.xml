@@ -38,11 +38,11 @@
         android:layout_alignParentTop="true"
         android:layout_marginStart="6dp"
         android:layout_toEndOf="@id/text_view_ticker"
-        android:background="@drawable/ic_star"
         android:gravity="center_vertical"
         app:layout_constraintBottom_toTopOf="@id/text_view_company_name"
         app:layout_constraintStart_toEndOf="@id/text_view_ticker"
-        app:layout_constraintTop_toTopOf="@id/text_view_ticker" />
+        app:layout_constraintTop_toTopOf="@id/text_view_ticker"
+        tools:src="@drawable/ic_star" />
 
     <TextView
         android:id="@+id/text_view_company_name"

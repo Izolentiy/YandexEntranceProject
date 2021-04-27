@@ -9,7 +9,10 @@ import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class Repository @Inject constructor(
@@ -18,16 +21,34 @@ class Repository @Inject constructor(
     private val webSocketHandler: WebSocketHandler
 ) {
     private val stockDao = database.stockDao()
+    private val tickerDao = database.tickerDao()
+    private lateinit var currTickers: List<Ticker>
+    init {
+        getTickers()
+    }
 
-    fun getStocks(tab: Tab, relevantTickers: List<String>) = networkBoundResource(
+    // Fetch tickers
+    fun getTickers() = networkBoundResource(
+        loadFromDb = { tickerDao.getTickers() },
+        shouldFetch = { tickers -> tickers.isEmpty() },
+        fetchData = {
+            /*withContext(Dispatchers.IO) {
+                service.getMostWatchedTickers()
+            }*/
+            TRENDING_TICKERS.map { Ticker(it, "") }
+        },
+        saveFetchResult = { tickers -> tickerDao.insertTickers(tickers) }
+    )
+
+    // Fetch stocks info
+    fun getStocks(tab: Tab) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
-
-        // Fetch stocks info
-        shouldFetchStocks = { stocks ->
+        shouldFetch = { stocks ->
             if (tab == Tab.FAVORITE) false
             else stocks.isEmpty()
         },
-        fetchStocks = {
+        fetchData = {
+            Log.d(TAG, "networkBoundResource: fetchStocks")
             withContext(Dispatchers.IO) {
                 // Get trending tickers from Mboum.com
                 /*val tickers = service.getMostWatchedTickers().tickers*/
@@ -38,16 +59,21 @@ class Repository @Inject constructor(
         },
         saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
 
-        // Fetch only prices
-        shouldFetchPrices = {
+    )
+
+    // Fetch only prices
+    fun updatePrices(tab: Tab, relevantTickers: List<String>) = networkBoundResource(
+        loadFromDb = { stockDao.getStocks(tab) },
+        shouldFetch = {
             tab != Tab.FAVORITE && relevantTickers.isNotEmpty()
         },
-        fetchPrices = {
+        fetchData = {
+            Log.d(TAG, "networkBoundResource: fetchPrices")
             withContext(Dispatchers.IO) {
                 relevantTickers.map { async { updateStockPrice(it) } }.awaitAll()
             }
         },
-        updatePrices = { stocks -> stockDao.updateStocks(stocks) },
+        saveFetchResult = { stocks -> stockDao.updateStocks(stocks) }
     )
 
     fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
@@ -88,8 +114,9 @@ class Repository @Inject constructor(
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
 
-    private suspend fun fetchStocks(ticker: String) = coroutineScope {
-
+    private suspend fun getMostWatchedTickers() = coroutineScope {
+        // Get trending tickers from Mboum.com
+        val tickers = service.getMostWatchedTickers().tickers
     }
 
     private suspend fun updateStockPrice(ticker: String) = coroutineScope {
@@ -113,7 +140,6 @@ class Repository @Inject constructor(
                 )
             }
         }
-
     }
 
     companion object {
