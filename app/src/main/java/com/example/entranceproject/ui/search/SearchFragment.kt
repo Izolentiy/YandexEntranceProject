@@ -11,6 +11,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.entranceproject.R
@@ -23,6 +24,7 @@ import com.example.entranceproject.ui.stocks.StockAdapter
 import com.example.entranceproject.ui.stocks.StockItemDecoration
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
 
 @AndroidEntryPoint
 class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
@@ -107,38 +109,9 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
             })
 
-            val textViewLabel = binding.appbarSearchResult.textViewLabel
-            viewModel.stocks.observe(viewLifecycleOwner) { result ->
-                if (result.data?.isEmpty() == true)
-                    textViewNoStocks.visibility = View.VISIBLE
-                else
-                    textViewNoStocks.visibility = View.GONE
-                when (result.status) {
-                    Resource.Status.SUCCESS -> {
-                        swipeRefreshLayout.isRefreshing = false
-                        textViewError.visibility = View.GONE
-                        progressBar.visibility = View.GONE
-                        stockAdapter.submitList(result.data)
-
-                        textViewLabel.text = getString(R.string.stocks_found, result.data?.size)
-                    }
-                    Resource.Status.LOADING -> {
-                        textViewError.visibility = View.GONE
-//                        if (!swipeRefreshLayout.isRefreshing)
-                        progressBar.visibility = View.VISIBLE
-                        textViewLabel.text = getString(R.string.stocks)
-                    }
-                    Resource.Status.ERROR -> {
-                        swipeRefreshLayout.isRefreshing = false
-                        Log.e(TAG, "onCreateView: ${result.error}")
-                        showSnackBar(result.error?.message!!)
-                        textViewError.visibility = View.VISIBLE
-                        textViewNoStocks.visibility = View.GONE
-                        progressBar.visibility = View.GONE
-
-                        textViewLabel.text = getString(R.string.stocks)
-                    }
-                }
+            lifecycleScope.launchWhenStarted {
+                viewModel.stocks
+                    .collect { result -> result?.let { handleResult(result, stockAdapter) } }
             }
         }
 
@@ -171,6 +144,43 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
         if (newText?.isEmpty() == true)
             showSuggestions = true; updateVisibility()
         return true
+    }
+
+    // Result processing
+    private fun handleResult(result: Resource<List<Stock>>, stockAdapter: StockAdapter) {
+        val textViewLabel = binding.appbarSearchResult.textViewLabel
+        binding.layoutSearchResult.apply {
+            if (result.data?.isEmpty() == true)
+                textViewNoStocks.visibility = View.VISIBLE
+            else
+                textViewNoStocks.visibility = View.GONE
+            when (result.status) {
+                Resource.Status.SUCCESS -> {
+                    swipeRefreshLayout.isRefreshing = false
+                    textViewError.visibility = View.GONE
+                    progressBar.visibility = View.GONE
+                    stockAdapter.submitList(result.data)
+
+                    textViewLabel.text = getString(R.string.stocks_found, result.data?.size)
+                }
+                Resource.Status.LOADING -> {
+                    textViewError.visibility = View.GONE
+//                        if (!swipeRefreshLayout.isRefreshing)
+                    progressBar.visibility = View.VISIBLE
+                    textViewLabel.text = getString(R.string.stocks)
+                }
+                Resource.Status.ERROR -> {
+                    swipeRefreshLayout.isRefreshing = false
+                    Log.e(TAG, "onCreateView: ${result.error}")
+                    showSnackBar(result.error?.message!!)
+                    textViewError.visibility = View.VISIBLE
+                    textViewNoStocks.visibility = View.GONE
+                    progressBar.visibility = View.GONE
+
+                    textViewLabel.text = getString(R.string.stocks)
+                }
+            }
+        }
     }
 
     // Helper methods
