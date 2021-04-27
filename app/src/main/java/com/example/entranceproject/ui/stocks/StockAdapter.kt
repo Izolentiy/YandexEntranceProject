@@ -20,7 +20,7 @@ import java.util.*
 
 class StockAdapter(
     private val onStarClickListener: (Stock) -> Unit
-) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator()) {
+) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator) {
     private lateinit var layoutManager: LinearLayoutManager
 
     override fun onCreateViewHolder(
@@ -137,7 +137,7 @@ class StockAdapter(
 
     }
 
-    class StockComparator : DiffUtil.ItemCallback<Stock>() {
+    object StockComparator : DiffUtil.ItemCallback<Stock>() {
         override fun areItemsTheSame(oldItem: Stock, newItem: Stock): Boolean =
             oldItem.ticker == newItem.ticker
 

@@ -3,6 +3,7 @@ package com.example.entranceproject.repository
 import android.util.Log
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
+import com.example.entranceproject.data.model.Ticker
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
 import com.example.entranceproject.network.websocket.SocketUpdate
