@@ -3,18 +3,15 @@ package com.example.entranceproject.repository
 import android.util.Log
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
-import com.example.entranceproject.data.model.Ticker
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 class Repository @Inject constructor(
     private val service: FinnhubService,
@@ -22,24 +19,20 @@ class Repository @Inject constructor(
     private val webSocketHandler: WebSocketHandler
 ) {
     private val stockDao = database.stockDao()
-    private val tickerDao = database.tickerDao()
-    private lateinit var currTickers: List<Ticker>
-    init {
-        getTickers()
-    }
 
     // Fetch tickers
-    fun getTickers() = networkBoundResource(
+    /*fun getTickers() = networkBoundResource(
         loadFromDb = { tickerDao.getTickers() },
         shouldFetch = { tickers -> tickers.isEmpty() },
         fetchData = {
-            /*withContext(Dispatchers.IO) {
+            *//*withContext(Dispatchers.IO) {
+                // Get trending tickers from Mboum.com
                 service.getMostWatchedTickers()
-            }*/
-            TRENDING_TICKERS.map { Ticker(it, "") }
+            }*//*
+            TRENDING_TICKERS.map { Ticker(it) }
         },
         saveFetchResult = { tickers -> tickerDao.insertTickers(tickers) }
-    )
+    )*/
 
     // Fetch stocks info
     fun getStocks(tab: Tab) = networkBoundResource(
@@ -51,14 +44,12 @@ class Repository @Inject constructor(
         fetchData = {
             Log.d(TAG, "networkBoundResource: fetchStocks")
             withContext(Dispatchers.IO) {
-                // Get trending tickers from Mboum.com
-                /*val tickers = service.getMostWatchedTickers().tickers*/
                 val tickers = TRENDING_TICKERS
-//                Log.e(TAG, "getStocks: $tickers")
-                tickers.map { async { getStockData(it) } }.awaitAll()
+                Log.e(TAG, "getStocks: $tickers")
+                tickers?.let { it.map { async { getStockData(it) } }.awaitAll() }
             }
         },
-        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
+        saveFetchResult = { stocks -> stockDao.insertStocks(stocks!!) },
 
     )
 
@@ -81,7 +72,29 @@ class Repository @Inject constructor(
 
     fun closeSocket() { webSocketHandler.closeSocket() }
 
-    suspend fun searchStocks(query: String) = flow {
+    fun searchStocks(query: String) = networkBoundResource(
+        loadFromDb = { stockDao.searchStocks(query) },
+        shouldFetch = { true },
+        fetchData = {
+            val supervisorJob = SupervisorJob()
+            with(CoroutineScope(coroutineContext + supervisorJob)) {
+                val response = service.search(query).result
+                val found = response
+                    .filter { it.type == "Common Stock" || it.type == "GDR" }
+                    .distinctBy { it.displaySymbol }
+                    .distinctBy { it.description }
+                Log.d(TAG, "searchStocks: found = ${found.map { "$it\n" }}")
+
+                val stocks = found
+                    .asSequence()
+                    .map { async { getStockData(it.symbol) } }
+                Log.d(TAG, "searchStocks: stocks = $stocks")
+                stocks.toList().awaitAll()
+            }
+        },
+        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
+    )
+        /*flow {
         Log.e(TAG, "searchStocks: state = START")
         try {
             Log.d(TAG, "searchStocks: state = LOADING")
@@ -89,7 +102,6 @@ class Repository @Inject constructor(
 
             val response = service.search(query).result
             emit(Resource.success(emptyList<Stock>()))
-            TODO("Distinct found 'tickers' properly")
             val found = response
                 .filter { it.type == "Common Stock" || it.type == "GDR" }
                 .distinctBy { it.description }
@@ -107,7 +119,7 @@ class Repository @Inject constructor(
             Log.d(TAG, "searchStocks: state = FAILURE")
             emit(Resource.error(emptyList<Stock>(), exception))
         }
-    }
+    }*/
 
     suspend fun refreshData() {
 
@@ -132,14 +144,26 @@ class Repository @Inject constructor(
         val quoteData = async { service.getQuoteData(ticker) }
         val companyData = async { service.getCompanyProfile(ticker) }
 
-        companyData.await().let { company ->
-            quoteData.await().let { quote ->
-                return@coroutineScope Stock(
-                    ticker = company.ticker, companyName = company.name, companyLogo = company.logo,
-                    webUrl = company.weburl, country = company.country, currency = company.currency,
-                    currentPrice = quote.c, openPrice = quote.o, isFavorite = false
-                )
+        return@coroutineScope try {
+            companyData.await().let { company ->
+                quoteData.await().let { quote ->
+                    Log.d(TAG, "getStockData: TICKER = $ticker")
+                    return@coroutineScope Stock(
+                        ticker = company.ticker,
+                        companyName = company.name,
+                        companyLogo = company.logo,
+                        webUrl = company.weburl,
+                        country = company.country,
+                        currency = company.currency,
+                        currentPrice = quote.c,
+                        openPrice = quote.o,
+                        isFavorite = false
+                    )
+                }
             }
+        } catch (exception: Exception) {
+            Log.e(TAG, "getStockData: ticker = $ticker, error = $exception")
+            Stock(ticker)
         }
     }
 

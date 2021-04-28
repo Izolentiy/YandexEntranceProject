@@ -6,11 +6,6 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "stocks_table",
-    foreignKeys = [ForeignKey(
-        entity = Ticker::class,
-        parentColumns = ["symbol"],
-        childColumns = ["ticker"]
-    )],
     primaryKeys = ["ticker"]
 )
 data class Stock(

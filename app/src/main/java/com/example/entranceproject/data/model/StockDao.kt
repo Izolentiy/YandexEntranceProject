@@ -19,6 +19,10 @@ interface StockDao {
     @Query("select * from stocks_table where isFavorite = 1")
     fun getFavoriteStocks(): Flow<List<Stock>>
 
+    @Query("select * from stocks_table where ticker like :query or companyName like :query")
+//    @Query("select * from stocks_table where (ticker or companyName) like :query") // Is it work?
+    fun searchStocks(query: String): Flow<List<Stock>>
+
     @Query("select * from stocks_table where ticker = :ticker")
     suspend fun getStock(ticker: String): Stock
 

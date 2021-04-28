@@ -133,7 +133,8 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // Search query change listener methods
     override fun onQueryTextSubmit(query: String?): Boolean {
-        viewModel.searchStocks()
+        viewModel.query.value = query!!
+        viewModel.searchStocks(query)
         showSuggestions = false
         updateVisibility()
         return true
@@ -173,6 +174,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                     swipeRefreshLayout.isRefreshing = false
                     Log.e(TAG, "onCreateView: ${result.error}")
                     showSnackBar(result.error?.message!!)
+                    stockAdapter.submitList(result.data)
                     textViewError.visibility = View.VISIBLE
                     textViewNoStocks.visibility = View.GONE
                     progressBar.visibility = View.GONE
