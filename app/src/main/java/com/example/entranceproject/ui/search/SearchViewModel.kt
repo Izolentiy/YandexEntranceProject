@@ -19,30 +19,10 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
 
     val query = MutableStateFlow("")
-//    private val showSuggestions = MutableStateFlow(true)
 
-    // Encapsulation...
-    /*private val _stocks = MutableLiveData<Resource<List<Stock>>>()
-    val stocks: LiveData<Resource<List<Stock>>> get() = _stocks*/
-
-    private val _stocks = MutableStateFlow<Resource<List<Stock>>?>(null)
-    val stocks: StateFlow<Resource<List<Stock>>?> get() = _stocks
-//    val stocks = switchMap(query.asLiveData()) {
-//        Log.d(TAG, "visibleTickers: ${query.value}")
-//        repository.searchStocks(query.value).asLiveData() }
-
-    /*@ExperimentalCoroutinesApi
+    @ExperimentalCoroutinesApi
     val stocks = combine(query) { query -> query.first() }
-        .flatMapLatest { query -> repository.searchStocks(query) }*/
-
-    fun searchStocks(query: String) =
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.searchStocks(query).collect { _stocks.value = it }
-        }
-
-//    fun searchStocks() {}
-
-    fun updateQuery(newQuery: String) { query.value = newQuery }
+        .flatMapLatest { query -> repository.searchStocks(query) }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

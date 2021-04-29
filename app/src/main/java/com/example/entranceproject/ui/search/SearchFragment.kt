@@ -24,6 +24,7 @@ import com.example.entranceproject.ui.stocks.StockAdapter
 import com.example.entranceproject.ui.stocks.StockItemDecoration
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 
 @AndroidEntryPoint
@@ -42,6 +43,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
         viewModel.updateFavorite(stock.copy(isFavorite = !stock.isFavorite))
     }
 
+    @ExperimentalCoroutinesApi
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -110,8 +112,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
             })
 
             lifecycleScope.launchWhenStarted {
-                viewModel.stocks
-                    .collect { result -> result?.let { handleResult(result, stockAdapter) } }
+                viewModel.stocks.collect { result -> handleResult(result, stockAdapter) }
             }
         }
 
@@ -132,16 +133,15 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     // Search query change listener methods
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        viewModel.query.value = query!!
-        viewModel.searchStocks(query)
+    override fun onQueryTextSubmit(query: String): Boolean {
+        viewModel.query.value = query
         showSuggestions = false
         updateVisibility()
         return true
     }
 
     override fun onQueryTextChange(newText: String?): Boolean {
-        viewModel.updateQuery(newText ?: "Error")
+//        viewModel.updateQuery(newText ?: "Error")
         if (newText?.isEmpty() == true)
             showSuggestions = true; updateVisibility()
         return true
@@ -168,6 +168,8 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                     textViewError.visibility = View.GONE
 //                        if (!swipeRefreshLayout.isRefreshing)
                     progressBar.visibility = View.VISIBLE
+                    stockAdapter.submitList(result.data)
+
                     textViewLabel.text = getString(R.string.stocks)
                 }
                 Resource.Status.ERROR -> {

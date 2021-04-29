@@ -8,15 +8,19 @@ import android.view.ViewGroup
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.LayoutStockListBinding
 import com.example.entranceproject.repository.Resource
 import com.example.entranceproject.ui.pager.PagerViewModel
+import com.example.entranceproject.ui.search.SearchFragment
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
+import kotlin.math.log
 
 @AndroidEntryPoint
 class StocksFragment : Fragment() {
@@ -68,7 +72,10 @@ class StocksFragment : Fragment() {
             })
 
 
-            viewModel.stocks.observe(viewLifecycleOwner) { result ->
+            lifecycleScope.launchWhenStarted {
+                viewModel.stocks.collect { result -> handleResult(result, stockAdapter) }
+            }
+            /*viewModel.stocks. observe(viewLifecycleOwner) { result ->
                 Log.d(TAG, "onCreateView: $result")
                 Log.d(TAG, "onCreateView: $stockAdapter")
                 Log.d(TAG, "onCreateView: $recyclerViewStocks")
@@ -87,6 +94,7 @@ class StocksFragment : Fragment() {
                         textViewError.visibility = View.GONE
 //                        if (!swipeRefreshLayout.isRefreshing)
                         progressBar.visibility = View.VISIBLE
+                        stockAdapter.submitList(result.data)
                     }
                     Resource.Status.ERROR -> {
                         swipeRefreshLayout.isRefreshing = false
@@ -97,7 +105,7 @@ class StocksFragment : Fragment() {
                         progressBar.visibility = View.GONE
                     }
                 }
-            }
+            }*/
         }
         return binding.root
     }
@@ -105,6 +113,40 @@ class StocksFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    // Result processing
+    private fun handleResult(result: Resource<List<Stock>>, stockAdapter: StockAdapter) {
+        binding.apply {
+            Log.d(TAG, "onCreateView: $result")
+            Log.d(TAG, "onCreateView: $stockAdapter")
+            Log.d(TAG, "onCreateView: $recyclerViewStocks")
+            if (result.data?.isEmpty() == true)
+                textViewNoStocks.visibility = View.VISIBLE
+            else
+                textViewNoStocks.visibility = View.GONE
+            when (result.status) {
+                Resource.Status.SUCCESS -> {
+                    swipeRefreshLayout.isRefreshing = false
+                    textViewError.visibility = View.GONE
+                    progressBar.visibility = View.GONE
+                }
+                Resource.Status.LOADING -> {
+                    textViewError.visibility = View.GONE
+//                        if (!swipeRefreshLayout.isRefreshing)
+                    progressBar.visibility = View.VISIBLE
+                }
+                Resource.Status.ERROR -> {
+                    swipeRefreshLayout.isRefreshing = false
+                    Log.e(TAG, "onCreateView: ${result.error}")
+                    showSnackBar(result.error?.message!!)
+                    textViewError.visibility = View.VISIBLE
+                    textViewNoStocks.visibility = View.GONE
+                    progressBar.visibility = View.GONE
+                }
+            }
+            stockAdapter.submitList(result.data)
+        }
     }
 
     private fun decorateStockList(

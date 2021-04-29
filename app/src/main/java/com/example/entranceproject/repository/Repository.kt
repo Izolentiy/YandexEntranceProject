@@ -20,20 +20,6 @@ class Repository @Inject constructor(
 ) {
     private val stockDao = database.stockDao()
 
-    // Fetch tickers
-    /*fun getTickers() = networkBoundResource(
-        loadFromDb = { tickerDao.getTickers() },
-        shouldFetch = { tickers -> tickers.isEmpty() },
-        fetchData = {
-            *//*withContext(Dispatchers.IO) {
-                // Get trending tickers from Mboum.com
-                service.getMostWatchedTickers()
-            }*//*
-            TRENDING_TICKERS.map { Ticker(it) }
-        },
-        saveFetchResult = { tickers -> tickerDao.insertTickers(tickers) }
-    )*/
-
     // Fetch stocks info
     fun getStocks(tab: Tab) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
@@ -46,80 +32,54 @@ class Repository @Inject constructor(
             withContext(Dispatchers.IO) {
                 val tickers = TRENDING_TICKERS
                 Log.e(TAG, "getStocks: $tickers")
-                tickers?.let { it.map { async { getStockData(it) } }.awaitAll() }
+                tickers.map { async { getStockData(it) } }.awaitAll()
             }
         },
-        saveFetchResult = { stocks -> stockDao.insertStocks(stocks!!) },
+        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
 
     )
 
-    // Fetch only prices
-    fun updatePrices(tab: Tab, relevantTickers: List<String>) = networkBoundResource(
-        loadFromDb = { stockDao.getStocks(tab) },
-        shouldFetch = {
-            tab != Tab.FAVORITE && relevantTickers.isNotEmpty()
-        },
-        fetchData = {
+    // Update stock prices
+    fun updatePrices(tickers: List<String>) = networkBoundResource(
+        loadFromDb = { stockDao.getStocksByTickers(tickers) },
+        shouldFetch = { loadedTickers -> loadedTickers.isNotEmpty() || tickers.isNotEmpty() },
+        fetchData = { stocks ->
             Log.d(TAG, "networkBoundResource: fetchPrices")
             withContext(Dispatchers.IO) {
-                relevantTickers.map { async { updateStockPrice(it) } }.awaitAll()
+                /*tickers.map { async { updateStockPrice(it) } }.awaitAll()*/
+                stocks.map { async { updateStockPrice(it) } }.awaitAll()
             }
         },
         saveFetchResult = { stocks -> stockDao.updateStocks(stocks) }
     )
 
-    fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
-
-    fun closeSocket() { webSocketHandler.closeSocket() }
-
+    // Search for stocks
     fun searchStocks(query: String) = networkBoundResource(
-        loadFromDb = { stockDao.searchStocks(query) },
-        shouldFetch = { true },
+        loadFromDb = { stockDao.searchStocks("$query%") },
+        shouldFetch = { query.isNotEmpty() },
         fetchData = {
             val supervisorJob = SupervisorJob()
             with(CoroutineScope(coroutineContext + supervisorJob)) {
+                Log.d(TAG, "searchStocks: $query")
                 val response = service.search(query).result
                 val found = response
                     .filter { it.type == "Common Stock" || it.type == "GDR" }
                     .distinctBy { it.displaySymbol }
                     .distinctBy { it.description }
-                Log.d(TAG, "searchStocks: found = ${found.map { "$it\n" }}")
+                Log.d(TAG, "searchStocks: found = ${found.map { "\n$it" }}")
 
-                val stocks = found
-                    .asSequence()
-                    .map { async { getStockData(it.symbol) } }
-                Log.d(TAG, "searchStocks: stocks = $stocks")
-                stocks.toList().awaitAll()
+                val stocks = mutableListOf<Stock>()
+                found.forEach { stocks.add(getStockData(it.symbol)) }
+                Log.d(TAG, "searchStocks: $stocks")
+                stocks
             }
         },
         saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
     )
-        /*flow {
-        Log.e(TAG, "searchStocks: state = START")
-        try {
-            Log.d(TAG, "searchStocks: state = LOADING")
-            emit(Resource.loading(emptyList<Stock>()))
 
-            val response = service.search(query).result
-            emit(Resource.success(emptyList<Stock>()))
-            val found = response
-                .filter { it.type == "Common Stock" || it.type == "GDR" }
-                .distinctBy { it.description }
-            Log.d(TAG, "searchStocks: found = $found")
+    fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
 
-            val stocks = found
-                .map { getStockData(it.symbol) }
-                .filter { it.currentPrice != 0.0 }
-            stockDao.insertStocks(stocks)
-
-            Log.d(TAG, "searchStocks: state = SUCCESS")
-            emit(Resource.success(stocks))
-        } catch (exception: Throwable) {
-            Log.e(TAG, "searchStocks: $exception")
-            Log.d(TAG, "searchStocks: state = FAILURE")
-            emit(Resource.error(emptyList<Stock>(), exception))
-        }
-    }*/
+    fun closeSocket() { webSocketHandler.closeSocket() }
 
     suspend fun refreshData() {
 
@@ -127,14 +87,8 @@ class Repository @Inject constructor(
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
 
-    private suspend fun getMostWatchedTickers() = coroutineScope {
-        // Get trending tickers from Mboum.com
-        val tickers = service.getMostWatchedTickers().tickers
-    }
-
-    private suspend fun updateStockPrice(ticker: String) = coroutineScope {
-        val quoteData = async { service.getQuoteData(ticker) }
-        val stock = stockDao.getStock(ticker)
+    private suspend fun updateStockPrice(stock: Stock) = coroutineScope {
+        val quoteData = async { service.getQuoteData(stock.ticker) }
         with(quoteData.await()) {
             return@coroutineScope stock.copy(currentPrice = c, openPrice = o)
         }

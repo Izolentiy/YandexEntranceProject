@@ -16,6 +16,9 @@ interface StockDao {
     @Query("select * from stocks_table")
     fun getAllStocks(): Flow<List<Stock>>
 
+    @Query("select * from stocks_table where ticker in (:tickers)")
+    fun getStocksByTickers(tickers: List<String>): Flow<List<Stock>>
+
     @Query("select * from stocks_table where isFavorite = 1")
     fun getFavoriteStocks(): Flow<List<Stock>>
 

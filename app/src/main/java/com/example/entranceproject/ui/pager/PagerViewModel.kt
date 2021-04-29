@@ -5,6 +5,7 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Transformations.switchMap
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
+import com.example.entranceproject.repository.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,26 +19,30 @@ class PagerViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val tab = MutableStateFlow(Tab.values().first())
-    val visibleTickers = MutableStateFlow(listOf<String>())
+    /*val visibleTickers = MutableStateFlow(listOf<String>())*/
+
+//    @ExperimentalCoroutinesApi
+//    val stocks = switchMap(visibleTickers.asLiveData()) {
+//        Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
+//        Log.d(TAG, "tab: ${tab.value}")
+//        repository.getStocks(tab.value).asLiveData() }
+    /*@ExperimentalCoroutinesApi
+    val stocks = combine(visibleTickers) {
+        Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
+        Log.d(TAG, "tab: ${tab.value}") }
+    .flatMapLatest { repository.getStocks(tab.value) }*/
+
+    // It work incorrectly because it is invoked before new tab value assigned
+    /*val stocks = repository.getStocks(getTab())*/
 
     @ExperimentalCoroutinesApi
-    val stocks = switchMap(visibleTickers.asLiveData()) {
-        Log.d(TAG, "visibleTickers: ${visibleTickers.value}")
-        Log.d(TAG, "tab: ${tab.value}")
-        repository.getStocks(tab.value).asLiveData() }
+    val stocks = combine(tab) {}.flatMapLatest { repository.getStocks(tab.value) }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
 
-    fun searchStocks(query: String) =
-        viewModelScope.launch(Dispatchers.IO) {}
-
-    fun subscribeToSocketEvents(tickers: List<String>) =
-        viewModelScope.launch(Dispatchers.IO) {}
-
-    fun refreshData() {
+    fun refreshData() =
         viewModelScope.launch(Dispatchers.IO) { repository.refreshData() }
-    }
 
     fun setTab(index: Int) {
         tab.value = Tab.values()[index]
