@@ -20,6 +20,7 @@ import com.example.entranceproject.data.SUGGESTIONS
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.FragmentSearchBinding
 import com.example.entranceproject.repository.Resource
+import com.example.entranceproject.ui.pager.PagerFragment
 import com.example.entranceproject.ui.stocks.StockAdapter
 import com.example.entranceproject.ui.stocks.StockItemDecoration
 import com.google.android.material.snackbar.Snackbar
@@ -119,7 +120,23 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
         return binding.root
     }
 
+    override fun onResume() {
+        Log.e(TAG, "onResume: ------------------------------SEARCH_FRAGMENT ")
+        super.onResume()
+    }
+
+    override fun onStart() {
+        Log.e(TAG, "onStart: ------------------------------SEARCH_FRAGMENT ")
+        super.onStart()
+    }
+
+    override fun onStop() {
+        Log.e(TAG, "onStop: ------------------------------SEARCH_FRAGMENT ")
+        super.onStop()
+    }
+
     override fun onPause() {
+        Log.e(TAG, "onPause: ------------------------------SEARCH_FRAGMENT ")
         super.onPause()
         // Hide keyboard when the user collapses an app
         val inputMethodManager = requireActivity()

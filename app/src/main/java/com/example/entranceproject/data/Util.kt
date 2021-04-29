@@ -11,6 +11,6 @@ val SUGGESTIONS = listOf(
     "Facebook",
     "First Solar",
     "Netflix",
-    "Mail.ru Group"
+    "Mail ru Group"
 )
 val RECENT_REQUESTS = SUGGESTIONS.reversed()

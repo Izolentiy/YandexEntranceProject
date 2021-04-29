@@ -1,15 +1,16 @@
 package com.example.entranceproject.ui.pager
 
-import android.util.Log
-import androidx.lifecycle.*
-import androidx.lifecycle.Transformations.switchMap
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
-import com.example.entranceproject.repository.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,7 +37,9 @@ class PagerViewModel @Inject constructor(
     /*val stocks = repository.getStocks(getTab())*/
 
     @ExperimentalCoroutinesApi
-    val stocks = combine(tab) {}.flatMapLatest { repository.getStocks(tab.value) }
+    val stocks = combine(tab) {}
+        .flatMapLatest { repository.getStocks(tab.value).flowOn(Dispatchers.IO) }
+    // TODO("getStocks() still executes even when search fragment displayed. Fix it")
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
@@ -47,6 +50,8 @@ class PagerViewModel @Inject constructor(
     fun setTab(index: Int) {
         tab.value = Tab.values()[index]
     }
+
+    fun getTab() = tab.value
 
     override fun onCleared() {
         repository.closeSocket()

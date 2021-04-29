@@ -21,8 +21,10 @@ class SearchViewModel @Inject constructor(
     val query = MutableStateFlow("")
 
     @ExperimentalCoroutinesApi
-    val stocks = combine(query) { query -> query.first() }
-        .flatMapLatest { query -> repository.searchStocks(query) }
+    val stocks = combine(query) {}
+        .flatMapLatest { repository.searchStocks(query.value).flowOn(Dispatchers.IO) }
+    /*val stocks = combine(query) { query -> query.first() }
+        .flatMapLatest { query -> repository.searchStocks(query) }*/
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

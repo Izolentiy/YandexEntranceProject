@@ -80,6 +80,7 @@ class StockAdapter(
                 val radius = itemView.resources
                     .getDimensionPixelSize(R.dimen.stock_item_logo_corner_radius)
 
+                Log.d(TAG, "bind: ${stock.webUrl}\n$logoImage")
                 Glide.with(itemView)
                     .load(logoImage)
                     .error(R.drawable.bg_logo_dark_shape)
@@ -101,13 +102,16 @@ class StockAdapter(
                 textViewTicker.text = stock.ticker
 
                 // Get currency symbol
-                val currency = try {
-                    stock.country?.let { country ->
-                        Currency.getInstance(Locale(country, country)).symbol.last()
-                    } ?: "$"
-                } catch (error: IllegalArgumentException) {
-                    ""
-                }
+                val currency = "$"
+//                val currency = try {
+//                    /*stock.country?.let { country ->
+//                        Currency.getInstance(Locale(country, country)).symbol.last()
+//                    } ?: "$"*/
+//                    if (stock.currency == "RUB") "₽"
+//                    else Currency.getInstance(stock?.currency).symbol.last()
+//                } catch (error: IllegalArgumentException) {
+//                    ""
+//                }
 
                 // Price and day delta
                 textViewCurrentPrice.text = itemView.resources
@@ -130,9 +134,15 @@ class StockAdapter(
             // to make urls recognizable for clearbit.com
             // "https://squareup.com/us/en"
             // "https://www.microsoft.com/en-us"
-            val outUrl = "${stock.webUrl?.replaceAfter(".com", "")}?size=52"
-            if (stock.currency == "RUB") outUrl.replace(".com", ".ru")
-            return "$LOGOS_URL$outUrl"
+            val ruUrl = "${stock.webUrl?.replaceAfter(".ru", "/")}"
+            var comUrl = "${ruUrl.replaceAfter(".com", "/")}?size=64"
+
+            /* Special treatment for Yandex because it has https://yandex.com/ domain
+               and it clearbit doesn't have icon for yandex.com
+               the same situation for Alibaba */
+            if (stock.ticker == "YNDX") comUrl = "https://yandex.ru/?size=64"
+            if (stock.ticker == "BABA") comUrl = "https://alibaba.com/?size=64"
+            return "$LOGOS_URL$comUrl"
         }
 
     }

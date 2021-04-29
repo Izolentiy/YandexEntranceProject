@@ -1,6 +1,7 @@
 package com.example.entranceproject.ui.pager
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import androidx.fragment.app.Fragment
 import com.example.entranceproject.R
 import com.example.entranceproject.databinding.FragmentPagerBinding
 import com.example.entranceproject.ui.search.SearchFragment
+import com.example.entranceproject.ui.stocks.StocksFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
 class PagerFragment : Fragment() {
@@ -41,6 +43,25 @@ class PagerFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        Log.e(TAG, "onResume: ------------------------------PAGER_FRAGMENT ")
+        super.onResume()
+    }
+
+    override fun onStart() {
+        Log.e(TAG, "onStart: ------------------------------PAGER_FRAGMENT ")
+        super.onStart()
+    }
+
+    override fun onStop() {
+        Log.e(TAG, "onStop: ------------------------------PAGER_FRAGMENT ")
+        super.onStop()
+    }
+
+    override fun onPause() {
+        Log.e(TAG, "onPause: ------------------------------PAGER_FRAGMENT ")
+        super.onPause()
+    }
 
     companion object {
         private val TAG = "${PagerFragment::class.java.simpleName}_TAG"

@@ -1,7 +1,7 @@
 package com.example.entranceproject.repository
 
 import android.util.Log
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 
 inline fun <ResultType, RequestType> networkBoundResource(
@@ -22,6 +22,7 @@ inline fun <ResultType, RequestType> networkBoundResource(
         }
     } else {
         Log.d(TAG, "networkBoundResource: shouldNotFetchAnything")
+        Log.d(TAG, "[${Thread.currentThread().name}] $TAG ------ SHOULD_NOT_FETCH")
         loadFromDb().map { Resource.success(it) }
     }
 

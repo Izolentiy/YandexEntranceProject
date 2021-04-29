@@ -110,7 +110,33 @@ class StocksFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        Log.e(TAG, "onResume: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        super.onResume()
+    }
+
+    override fun onStart() {
+        Log.e(TAG, "onStart: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        super.onStart()
+    }
+
+    override fun onStop() {
+        Log.e(TAG, "onStop: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        super.onStop()
+    }
+
+    override fun onPause() {
+        Log.e(TAG, "onPause: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        Log.e(TAG, "onDestroy: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        super.onDestroy()
+    }
+
     override fun onDestroyView() {
+        Log.e(TAG, "onDestroyView: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onDestroyView()
         _binding = null
     }

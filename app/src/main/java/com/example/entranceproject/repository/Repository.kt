@@ -5,6 +5,7 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
+import com.example.entranceproject.network.model.SearchResultDto
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
@@ -28,23 +29,22 @@ class Repository @Inject constructor(
             else stocks.isEmpty()
         },
         fetchData = {
-            Log.d(TAG, "networkBoundResource: fetchStocks")
+            Log.d(TAG, log("GET_STOCKS: ${it.map { stock -> stock.ticker }}"))
             withContext(Dispatchers.IO) {
                 val tickers = TRENDING_TICKERS
-                Log.e(TAG, "getStocks: $tickers")
                 tickers.map { async { getStockData(it) } }.awaitAll()
             }
         },
         saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
 
-    )
+        )
 
     // Update stock prices
     fun updatePrices(tickers: List<String>) = networkBoundResource(
-        loadFromDb = { stockDao.getStocksByTickers(tickers) },
+        loadFromDb = { stockDao.getStocksByTicker(tickers) },
         shouldFetch = { loadedTickers -> loadedTickers.isNotEmpty() || tickers.isNotEmpty() },
         fetchData = { stocks ->
-            Log.d(TAG, "networkBoundResource: fetchPrices")
+            Log.d(TAG, log("UPDATE_STOCKS: ${stocks.map { stock -> stock.ticker }}"))
             withContext(Dispatchers.IO) {
                 /*tickers.map { async { updateStockPrice(it) } }.awaitAll()*/
                 stocks.map { async { updateStockPrice(it) } }.awaitAll()
@@ -55,31 +55,54 @@ class Repository @Inject constructor(
 
     // Search for stocks
     fun searchStocks(query: String) = networkBoundResource(
-        loadFromDb = { stockDao.searchStocks("$query%") },
+        loadFromDb = { stockDao.searchStocks("%$query%") },
         shouldFetch = { query.isNotEmpty() },
-        fetchData = {
-            val supervisorJob = SupervisorJob()
-            with(CoroutineScope(coroutineContext + supervisorJob)) {
-                Log.d(TAG, "searchStocks: $query")
-                val response = service.search(query).result
-                val found = response
-                    .filter { it.type == "Common Stock" || it.type == "GDR" }
-                    .distinctBy { it.displaySymbol }
-                    .distinctBy { it.description }
-                Log.d(TAG, "searchStocks: found = ${found.map { "\n$it" }}")
+        fetchData = { stocks ->
+            Log.d(TAG, log("searchStocks: QUERY=$query"))
+            val foundStocks = mutableListOf<Stock>()
+            val invalidTickers = mutableListOf<String>()
 
-                val stocks = mutableListOf<Stock>()
-                found.forEach { stocks.add(getStockData(it.symbol)) }
-                Log.d(TAG, "searchStocks: $stocks")
-                stocks
-            }
+            val response = testSearch(query).result
+                .asFlow()
+                .filter { !invalidTickers.contains(it.symbol) }
+                .filter { !foundStocks.map { stock -> stock.ticker }.contains(it.symbol) }
+                .onEach {
+                    Log.d(TAG, log("searchStocks: TICKER=${it.symbol}"))
+                    invalidTickers.add(it.symbol)
+                    foundStocks.add(getStockData(it.symbol))
+                    invalidTickers.remove(it.symbol)
+                }
+                .retryWhen { cause, attempt ->
+                    if (cause is retrofit2.HttpException) {
+                        Log.d(TAG, "searchStocks: RETRY. ATTEMPT=$attempt")
+                        return@retryWhen true
+                    } else {
+                        false
+                    }
+                }
+                .catch { error ->
+                    if (error is retrofit2.HttpException) println("Woo roo roo")
+                }
+                .toList()
+            response.forEach { Log.d(TAG, "searchStocks: $it") }
+            foundStocks.forEach { Log.d(TAG, "searchStocks: $it") }
+            foundStocks.filter { it.currentPrice != 0.0 && it.dailyDelta != 0.0}
         },
-        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
+        saveFetchResult = { stocks ->
+            stockDao.insertStocks(stocks)
+        }
     )
 
     fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
 
-    fun closeSocket() { webSocketHandler.closeSocket() }
+    fun closeSocket() {
+        webSocketHandler.closeSocket()
+    }
+
+    suspend fun testSearch(query: String):  SearchResultDto {
+        Log.d(TAG, "testSearch: ------ SEARCH")
+        return service.search(query)
+    }
 
     suspend fun refreshData() {
 
@@ -101,8 +124,9 @@ class Repository @Inject constructor(
         return@coroutineScope try {
             companyData.await().let { company ->
                 quoteData.await().let { quote ->
-                    Log.d(TAG, "getStockData: TICKER = $ticker")
-                    return@coroutineScope Stock(
+                    Log.d(TAG, log("GET_STOCK_DATA: $ticker"))
+//                    return@coroutineScope Stock(
+                    Stock(
                         ticker = company.ticker,
                         companyName = company.name,
                         companyLogo = company.logo,
@@ -110,13 +134,13 @@ class Repository @Inject constructor(
                         country = company.country,
                         currency = company.currency,
                         currentPrice = quote.c,
-                        openPrice = quote.o,
-                        isFavorite = false
+                        openPrice = quote.o
                     )
                 }
             }
         } catch (exception: Exception) {
-            Log.e(TAG, "getStockData: ticker = $ticker, error = $exception")
+            log("GET_STOCK_DATA: $ticker, $exception")
+//            Log.e(TAG, "getStockData: ticker = $ticker, error = $exception")
             Stock(ticker)
         }
     }
@@ -124,6 +148,8 @@ class Repository @Inject constructor(
     companion object {
         private val TAG = "${Repository::class.java.simpleName}_TAG"
     }
+
+    fun log(msg: String) = "[${Thread.currentThread().name}] $TAG --- $msg"
 
 }
 
