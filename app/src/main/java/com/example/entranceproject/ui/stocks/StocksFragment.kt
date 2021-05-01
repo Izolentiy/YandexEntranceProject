@@ -15,12 +15,10 @@ import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.LayoutStockListBinding
 import com.example.entranceproject.repository.Resource
 import com.example.entranceproject.ui.pager.PagerViewModel
-import com.example.entranceproject.ui.search.SearchFragment
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
-import kotlin.math.log
 
 @AndroidEntryPoint
 class StocksFragment : Fragment() {
@@ -72,6 +70,9 @@ class StocksFragment : Fragment() {
             })
 
 
+//            viewModel.stocks.observe(viewLifecycleOwner) { result ->
+//                handleResult(result, stockAdapter)
+//            }
             lifecycleScope.launchWhenStarted {
                 viewModel.stocks.collect { result -> handleResult(result, stockAdapter) }
             }
@@ -111,7 +112,7 @@ class StocksFragment : Fragment() {
     }
 
     override fun onResume() {
-        Log.e(TAG, "onResume: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onResume: STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onResume()
     }
 
@@ -121,22 +122,22 @@ class StocksFragment : Fragment() {
     }
 
     override fun onStop() {
-        Log.e(TAG, "onStop: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onStop: STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onStop()
     }
 
     override fun onPause() {
-        Log.e(TAG, "onPause: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onPause: STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onPause()
     }
 
     override fun onDestroy() {
-        Log.e(TAG, "onDestroy: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onDestroy: STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onDestroy()
     }
 
     override fun onDestroyView() {
-        Log.e(TAG, "onDestroyView: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onDestroyView: STOCKS_FRAGMENT ${viewModel.getTab()}")
         super.onDestroyView()
         _binding = null
     }

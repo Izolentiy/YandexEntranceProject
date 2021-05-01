@@ -1,22 +1,22 @@
 package com.example.entranceproject.ui.pager
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.example.entranceproject.R
 import com.example.entranceproject.databinding.FragmentPagerBinding
 import com.example.entranceproject.ui.search.SearchFragment
-import com.example.entranceproject.ui.stocks.StocksFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
 class PagerFragment : Fragment() {
 
     /*private var _binding: FragmentPagerBinding? = null
-    private val binding get() = _binding!!
-    private val viewModel: MainViewModel by viewModels()*/
+    private val binding get() = _binding!!*/
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,7 +34,7 @@ class PagerFragment : Fragment() {
             }
 
             // Setting ViewPager2
-            viewPager.adapter = PagerAdapter(requireContext())
+            viewPager.adapter = PagerAdapter(this@PagerFragment)
             TabLayoutMediator(tabsLayout, viewPager) { tab, position ->
                 tab.text = resources.getString(PagerAdapter.TAB_TITLES[position])
             }.attach()
@@ -44,23 +44,28 @@ class PagerFragment : Fragment() {
     }
 
     override fun onResume() {
-        Log.e(TAG, "onResume: ------------------------------PAGER_FRAGMENT ")
+        Log.e(TAG, "onResume: PAGER_FRAGMENT ")
         super.onResume()
     }
 
     override fun onStart() {
-        Log.e(TAG, "onStart: ------------------------------PAGER_FRAGMENT ")
+        Log.e(TAG, "onStart: PAGER_FRAGMENT ")
         super.onStart()
     }
 
     override fun onStop() {
-        Log.e(TAG, "onStop: ------------------------------PAGER_FRAGMENT ")
+        Log.e(TAG, "onStop: PAGER_FRAGMENT ")
         super.onStop()
     }
 
     override fun onPause() {
-        Log.e(TAG, "onPause: ------------------------------PAGER_FRAGMENT ")
+        Log.e(TAG, "onPause: PAGER_FRAGMENT ")
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        Log.e(TAG, "onDestroy: PAGER_FRAGMENT ")
+        super.onDestroy()
     }
 
     companion object {

@@ -1,16 +1,16 @@
 package com.example.entranceproject.network.model
 
 data class CompanyProfileDto(
-    val country: String,
-    val currency: String,
+    val country: String?,
+    val currency: String?,
 //    val exchange: String,
 //    val finnhubIndustry: String,
 //    val ipo: String,
-    val logo: String,
+    val logo: String?,
 //    val marketCapitalization: Double,
-    val name: String,
+    val name: String?,
 //    val phone: String,
 //    val shareOutstanding: Double,
-    val ticker: String,
-    val weburl: String
+    val ticker: String?,
+    val weburl: String?
 )

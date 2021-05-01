@@ -255,7 +255,7 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     companion object {
-        private val TAG = "${SearchFragment::class.java}_TAG"
+        private val TAG = "${SearchFragment::class.java.simpleName}_TAG"
 
         @JvmStatic
         fun newInstance() = SearchFragment().apply {

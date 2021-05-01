@@ -3,7 +3,7 @@ package com.example.entranceproject.data
 val SUGGESTIONS = listOf(
     "Apple",
     "Yandex",
-    "Google",
+    "Alphabet",
     "Amazon",
     "Tesla",
     "Alibaba",
@@ -11,6 +11,6 @@ val SUGGESTIONS = listOf(
     "Facebook",
     "First Solar",
     "Netflix",
-    "Mail ru Group"
+    "Mail ru"
 )
 val RECENT_REQUESTS = SUGGESTIONS.reversed()
