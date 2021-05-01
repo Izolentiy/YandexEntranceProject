@@ -5,14 +5,12 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
-import com.example.entranceproject.network.model.SearchResultDto
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
 import kotlin.system.measureTimeMillis
 
 class Repository @Inject constructor(
@@ -108,10 +106,15 @@ class Repository @Inject constructor(
         }
     )
 
-    fun openSocket(): StateFlow<SocketUpdate> = webSocketHandler.openSocket()
+    // Methods to manage WebSocket
+    fun openSocket() { webSocketHandler.openSocket() }
 
-    fun closeSocket() {
-        webSocketHandler.closeSocket()
+    fun closeSocket() { webSocketHandler.closeSocket() }
+
+    fun getSocketUpdates(): StateFlow<SocketUpdate> = webSocketHandler.events
+
+    suspend fun setSubpscription(tickers: StateFlow<List<String>>) {
+        webSocketHandler.setSubscription(tickers)
     }
 
     suspend fun refreshData() {}

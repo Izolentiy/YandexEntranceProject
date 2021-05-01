@@ -1,17 +1,13 @@
 package com.example.entranceproject.ui.pager
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,12 +16,23 @@ class PagerViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    private val tab = MutableStateFlow(Tab.values().first())
-    /*val visibleTickers = MutableStateFlow(listOf<String>())*/
+    private val _tab = MutableStateFlow(Tab.values().first())
+    val tab = MutableStateFlow(Tab.values().first())
+    private val _visibleTickers = MutableStateFlow(listOf<String>())
+    val visibleTickers = MutableStateFlow(listOf<String>())
 
     @ExperimentalCoroutinesApi
-    val stocks = combine(tab) {}
-        .flatMapLatest { repository.getStocks(tab.value).flowOn(Dispatchers.IO) }
+    val stocks = combine(_tab) {}
+        .flatMapLatest { repository.getStocks(_tab.value).flowOn(Dispatchers.IO) }
+
+    fun subscribeToPriceUpdates() =
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.openSocket()
+            repository.setSubpscription(_visibleTickers)
+            _visibleTickers.collect {
+            }
+        }
+
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
@@ -33,11 +40,9 @@ class PagerViewModel @Inject constructor(
     fun refreshData() =
         viewModelScope.launch(Dispatchers.IO) { repository.refreshData() }
 
-    fun setTab(index: Int) {
-        tab.value = Tab.values()[index]
-    }
+    fun setVisibleTickers(tickers: List<String>) { _visibleTickers.value = tickers }
 
-    fun getTab() = tab.value
+    fun setTab(index: Int) { _tab.value = Tab.values()[index] }
 
     override fun onCleared() {
         repository.closeSocket()

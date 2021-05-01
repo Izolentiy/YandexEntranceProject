@@ -3,34 +3,29 @@ package com.example.entranceproject.network.websocket
 import android.util.Log
 import com.example.entranceproject.network.FinnhubService.Companion.FINNHUB_KEY
 import com.example.entranceproject.network.FinnhubService.Companion.WEB_SOCKET_URL
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import okhttp3.*
-import okhttp3.WebSocketListener
 import javax.inject.Inject
 
 class WebSocketHandler @Inject constructor(
     private val socketClient: OkHttpClient
 ) : WebSocketListener() {
 
-    // later should be replaced with reactive list
-    private val _listeningTickers = mutableListOf(
-        "ETSY",
-        "RBLX",
-        "ZOM",
-        "SQ",
-        "WMT",
-        "RIOT",
-        "VIAC"
-    )
+    // To manage update coroutine lifecycle
+    private val updateJob = Job()
+
+    private val subscriptions = mutableListOf<String>()
+    private var listeningTickers: StateFlow<List<String>>? = null
     private val _events = MutableStateFlow(SocketUpdate())
     private var webSocket: WebSocket? = null
 
-    fun openSocket(): StateFlow<SocketUpdate> {
-        webSocket = socketClient.newWebSocket(
-            Request.Builder().url("$WEB_SOCKET_URL?token=$FINNHUB_KEY").build(), this
-        )
+    val events get() = _events.asStateFlow()
+
+    fun openSocket() {
+        val request = Request.Builder().url("$WEB_SOCKET_URL?token=$FINNHUB_KEY").build()
+        webSocket = socketClient.newWebSocket(request, this)
         socketClient.dispatcher().executorService().shutdown()
-        return _events.asStateFlow()
     }
 
     fun closeSocket() {
@@ -39,6 +34,14 @@ class WebSocketHandler @Inject constructor(
             webSocket = null
         } catch (exception: Exception) {
             Log.e(TAG, "stopSocket: $exception")
+        }
+    }
+
+    suspend fun setSubscription(tickers: StateFlow<List<String>>) {
+        listeningTickers = tickers
+        listeningTickers?.collect { tickers ->
+            subscriptions.filter { !tickers.contains(it) }.forEach { unsubscribeFrom(it) }
+            tickers.forEach { subscribeTo(it) }
         }
     }
 
@@ -55,11 +58,7 @@ class WebSocketHandler @Inject constructor(
     }
 
     // Socket callbacks
-    override fun onOpen(webSocket: WebSocket, response: Response) {
-        _listeningTickers.forEach { ticker ->
-            subscribeTo(ticker)
-        }
-    }
+    override fun onOpen(webSocket: WebSocket, response: Response) {}
 
     override fun onMessage(webSocket: WebSocket, text: String) {
         _events.value = SocketUpdate(text)

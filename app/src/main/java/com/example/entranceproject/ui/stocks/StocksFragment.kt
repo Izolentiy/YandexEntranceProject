@@ -57,15 +57,17 @@ class StocksFragment : Fragment() {
             decorateStockList(recyclerViewStocks, stockAdapter)
             recyclerViewStocks.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    /*if (newState == RecyclerView.SCROLL_STATE_IDLE)
-                        viewModel.visibleTickers.value =
-                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)*/
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        val tickers = stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                        viewModel.setVisibleTickers(tickers)
+                    }
                 }
 
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    /*if (viewModel.visibleTickers.value.isEmpty())
-                        viewModel.visibleTickers.value =
-                            stockAdapter.getCurrentVisibleItems().map(Stock::ticker)*/
+                    if (viewModel.visibleTickers.value.isEmpty()) {
+                        val tickers = stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                        viewModel.setVisibleTickers(tickers)
+                    }
                 }
             })
 
@@ -112,32 +114,32 @@ class StocksFragment : Fragment() {
     }
 
     override fun onResume() {
-        Log.e(TAG, "onResume: STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onResume: STOCKS_FRAGMENT ${viewModel.tab}")
         super.onResume()
     }
 
     override fun onStart() {
-        Log.e(TAG, "onStart: ------------------------------STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onStart: STOCKS_FRAGMENT ${viewModel.tab}")
         super.onStart()
     }
 
     override fun onStop() {
-        Log.e(TAG, "onStop: STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onStop: STOCKS_FRAGMENT ${viewModel.tab}")
         super.onStop()
     }
 
     override fun onPause() {
-        Log.e(TAG, "onPause: STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onPause: STOCKS_FRAGMENT ${viewModel.tab}")
         super.onPause()
     }
 
     override fun onDestroy() {
-        Log.e(TAG, "onDestroy: STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onDestroy: STOCKS_FRAGMENT ${viewModel.tab}")
         super.onDestroy()
     }
 
     override fun onDestroyView() {
-        Log.e(TAG, "onDestroyView: STOCKS_FRAGMENT ${viewModel.getTab()}")
+        Log.e(TAG, "onDestroyView: STOCKS_FRAGMENT ${viewModel.visibleTickers}")
         super.onDestroyView()
         _binding = null
     }
