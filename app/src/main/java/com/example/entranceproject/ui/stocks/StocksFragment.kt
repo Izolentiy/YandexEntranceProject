@@ -54,7 +54,8 @@ class StocksFragment : Fragment() {
                 swipeRefreshLayout.isRefreshing = false
             }
 
-            decorateStockList(recyclerViewStocks, stockAdapter)
+            decorateStockList(recyclerViewStocks)
+            recyclerViewStocks.adapter = stockAdapter
             recyclerViewStocks.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     if (newState == RecyclerView.SCROLL_STATE_IDLE) {
@@ -116,6 +117,7 @@ class StocksFragment : Fragment() {
         return binding.root
     }
 
+    // Lifecycle callbacks to see lifecycle events on log
     override fun onResume() {
         Log.e(TAG, "onResume: STOCKS_FRAGMENT ${viewModel.tab.value}")
         super.onResume()
@@ -181,12 +183,9 @@ class StocksFragment : Fragment() {
         }
     }
 
-    private fun decorateStockList(
-        recyclerView: RecyclerView,
-        stockAdapter: StockAdapter
-    ) {
+    // Helper methods
+    private fun decorateStockList(recyclerView: RecyclerView) {
         recyclerView.apply {
-            adapter = stockAdapter
             val endMargin = resources
                 .getDimensionPixelSize(R.dimen.activity_horizontal_margin)
             val defaultMargin = resources
@@ -219,4 +218,5 @@ class StocksFragment : Fragment() {
             arguments = Bundle().apply { putInt(ARG_SECTION_NUMBER, sectionNumber) }
         }
     }
+
 }

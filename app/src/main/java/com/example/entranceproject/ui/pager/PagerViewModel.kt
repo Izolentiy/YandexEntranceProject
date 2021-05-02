@@ -28,7 +28,7 @@ class PagerViewModel @Inject constructor(
     fun subscribeToPriceUpdates() =
         viewModelScope.launch(Dispatchers.IO) {
             repository.openSocket()
-            repository.setSubscription(visibleTickers).collect()
+            repository.getSubscription(visibleTickers).collect()
         }
 
 

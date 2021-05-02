@@ -29,7 +29,7 @@ class WebSocketHandler @Inject constructor(
     )*/
 
     private val subscriptions = mutableListOf<String>()
-    private var listeningTickers: StateFlow<List<String>>? = null
+//    private var listeningTickers: StateFlow<List<String>>? = null
     private val _events = MutableStateFlow(SocketUpdate())
     private var webSocket: WebSocket? = null
 
@@ -56,8 +56,9 @@ class WebSocketHandler @Inject constructor(
     }
 
     suspend fun setSubscription(tickersToListen: StateFlow<List<String>>) {
-        listeningTickers = tickersToListen
-        listeningTickers?.collect { tickers ->
+//        listeningTickers = tickersToListen
+//        listeningTickers?.collect { tickers ->
+        tickersToListen.collect { tickers ->
             Log.d(TAG, "setSubscription: subscriptions: $subscriptions")
             subscriptions.filter { !tickers.contains(it) }.forEach { unsubscribeFrom(it) }
             tickers.filter { !subscriptions.contains(it) }.forEach { subscribeTo(it) }
@@ -68,15 +69,14 @@ class WebSocketHandler @Inject constructor(
     private fun subscribeTo(ticker: String) {
         subscriptions.add(ticker)
         val request = """{"type":"subscribe","symbol":"$ticker"}"""
-//        webSocket!!.send(request)
+        webSocket!!.send(request)
         Log.d(TAG, "subscribeTo: $ticker")
     }
 
     private fun unsubscribeFrom(ticker: String) {
         subscriptions.remove(ticker)
-//        val request = "{'type':'unsubscribe', 'symbol':$ticker}"
         val request = """{"type":"unsubscribe","symbol":"$ticker"}"""
-//        webSocket!!.send(request)
+        webSocket!!.send(request)
         Log.d(TAG, "unsubscribeFrom: $ticker")
     }
 
@@ -98,10 +98,12 @@ class WebSocketHandler @Inject constructor(
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        Log.d(TAG, "onFailure: ${t.message}")
         _events.value = SocketUpdate(error = t)
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+        Log.d(TAG, "onClosing: $reason")
         _events.value = SocketUpdate(error = SocketAbortedException())
         webSocket.close(NORMAL_CLOSURE_STATUS, null)
     }

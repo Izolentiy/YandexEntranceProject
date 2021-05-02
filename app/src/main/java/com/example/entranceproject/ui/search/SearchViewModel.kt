@@ -1,15 +1,16 @@
 package com.example.entranceproject.ui.search
 
-import android.util.Log
-import androidx.lifecycle.*
-import androidx.lifecycle.Transformations.switchMap
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.repository.Repository
-import com.example.entranceproject.repository.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,8 +24,6 @@ class SearchViewModel @Inject constructor(
     @ExperimentalCoroutinesApi
     val stocks = combine(query) {}
         .flatMapLatest { repository.searchStocks(query.value).flowOn(Dispatchers.IO) }
-    /*val stocks = combine(query) { query -> query.first() }
-        .flatMapLatest { query -> repository.searchStocks(query) }*/
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

@@ -5,13 +5,13 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
-import com.example.entranceproject.network.model.TickerPriceDto
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 import kotlin.system.measureTimeMillis
 
 class Repository @Inject constructor(
@@ -29,22 +29,21 @@ class Repository @Inject constructor(
             else stocks.isEmpty()
         },
         fetchData = {
+            val scope = CoroutineScope(coroutineContext)
             var stocks = listOf<Stock>()
             val time = measureTimeMillis {
                 stocks = TRENDING_TICKERS.asFlow()
-                    .map { getStockData(it) }
+                    .map { scope.async { getStockData(it) } }
+                    .flowOn(Dispatchers.IO)
                     .buffer()
+                    .map { it.await() }
+                    .flowOn(Dispatchers.Default)
                     .toList()
             }
-            Log.d(TAG, log("getStocks: -------------------- $time ms"))
+            Log.d(TAG, log("getStocks: STOCK DATA FETCHING TOOK $time ms"))
             stocks
-//            Log.d(TAG, log("GET_STOCKS: ${it.map { stock -> stock.ticker }}"))
-//            withContext(Dispatchers.IO) {
-//                val tickers = TRENDING_TICKERS
-//                tickers.map { async { getStockData(it) } }.awaitAll()
-//            }
         },
-        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) },
+        saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
     )
 
     // Update stock prices
@@ -55,7 +54,7 @@ class Repository @Inject constructor(
             Log.d(TAG, log("UPDATE_STOCKS: ${stocks.map { stock -> stock.ticker }}"))
             withContext(Dispatchers.IO) {
                 /*tickers.map { async { updateStockPrice(it) } }.awaitAll()*/
-                stocks.map { async { updateStockPrice(it) } }.awaitAll()
+                stocks.map { async { getStockPrice(it) } }.awaitAll()
             }
         },
         saveFetchResult = { stocks -> stockDao.updateStocks(stocks) }
@@ -65,35 +64,46 @@ class Repository @Inject constructor(
     fun searchStocks(query: String) = networkBoundResource(
         loadFromDb = { stockDao.searchStocks("%$query%") },
         shouldFetch = { query.isNotEmpty() },
-        fetchData = {
-            Log.d(TAG, log("searchStocks: QUERY=$query"))
-            val foundStocks = mutableListOf<Stock>()
-            val invalidTickers = mutableListOf<String>()
+        fetchData = { stocks ->
+            val scope = CoroutineScope(coroutineContext)
+            val tickersInLocal = stocks.map { it.ticker }
+            var foundStocks = setOf<Stock>()
 
             val response = service.search(query).result
-            val foundTickers = response.map { it.symbol }
-            Log.d(TAG, "searchStocks: SEARCH --- ALL_FOUND $foundTickers")
+            response.forEach { Log.d(TAG, "searchStocks: $it") }
 
             val time = measureTimeMillis {
-                response.asFlow()
-                    .filter { !invalidTickers.contains(it.symbol) }
-                    .filter { !foundStocks.map { stock -> stock.ticker }.contains(it.symbol) }
-                    .onEach {
-                        Log.d(TAG, log("searchStocks: TICKER=${it.symbol}"))
-                        invalidTickers.add(it.symbol)
-                        foundStocks.add(getStockData(it.symbol))
-                        invalidTickers.remove(it.symbol)
-                    }
+                // Get stock data
+                foundStocks = response.asFlow()
+                    .filter { it.symbol != "" }
+                    .filter { !tickersInLocal.contains(it.symbol) }
                     .flowOn(Dispatchers.Default)
-                    .toList()
-                response.forEach { Log.d(TAG, "searchStocks: $it") }
+                    .map { scope.async { getStockData(it.symbol) } }
+                    .flowOn(Dispatchers.IO)
+                    .buffer()
+                    .map { it.await() }
+                    .flowOn(Dispatchers.Default)
+                    .catch { emit(Stock("")) }
+                    .toSet()
+
+                // Get stock prices
+                foundStocks = foundStocks.asFlow()
+                    .filter { it.ticker != "" }
+                    .filter { !tickersInLocal.contains(it.ticker) }
+                    .flowOn(Dispatchers.Default)
+                    .map { scope.async { getStockPrice(it) } }
+                    .flowOn(Dispatchers.IO)
+                    .buffer()
+                    .map { it.await() }
+                    .filter { it.currentPrice != 0.0 || it.dailyDelta != 0.0 }
+                    .flowOn(Dispatchers.Default)
+                    .catch { emit(Stock("")) }
+                    .toSet()
             }
-            Log.d(TAG, log("searchStocks: -------------------- $time ms"))
+            Log.d(TAG, log("searchStocks: QUERY=$query, SEARCH TOOK: $time ms"))
             foundStocks
-//            foundStocks.filter { it.currentPrice != 0.0 || it.dailyDelta != 0.0 }
         },
         saveFetchResult = { stocks ->
-            stockDao.updateStocks(stocks)
             val tickers = stocks.map { it.ticker }
             val inLocal = stockDao.getStocksByTicker(tickers).first().map { it.ticker }
             val fromNet = tickers.filter { ticker -> ticker !in inLocal }
@@ -112,24 +122,18 @@ class Repository @Inject constructor(
 
     fun closeSocket() { webSocketHandler.closeSocket() }
 
-//    fun getSocketUpdates(): StateFlow<SocketUpdate> = webSocketHandler.events
-//    fun getSocketUpdates(): Flow<TickerPriceDto> = webSocketHandler.events
-
-//    suspend fun setSubscription(tickers: StateFlow<List<String>>) {
-//        webSocketHandler.setSubscription(tickers)
-//    }
-
-    suspend fun setSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
+    suspend fun getSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
         webSocketHandler.setSubscription(tickers)
-        val socketUpdates = webSocketHandler.events
-        return socketUpdates
+        return webSocketHandler.events
     }
 
-    suspend fun refreshData() {}
+    // ---
+    suspend fun refreshData() { /*TODO("Implement data refreshing")*/}
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
 
-    private suspend fun updateStockPrice(stock: Stock): Stock {
+    // Helper methods
+    private suspend fun getStockPrice(stock: Stock): Stock {
         val quoteData = service.getQuoteData(stock.ticker)
         with(quoteData) {
             Log.d(TAG, log("GET_STOCK_PRICE: ${stock.ticker}"))

@@ -1,22 +1,17 @@
 package com.example.entranceproject.ui.pager
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import com.example.entranceproject.R
 import com.example.entranceproject.databinding.FragmentPagerBinding
 import com.example.entranceproject.ui.search.SearchFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
 class PagerFragment : Fragment() {
-
-    /*private var _binding: FragmentPagerBinding? = null
-    private val binding get() = _binding!!*/
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -26,6 +21,7 @@ class PagerFragment : Fragment() {
         val binding = FragmentPagerBinding.inflate(inflater)
 
         binding.apply {
+            // Setting Toolbar
             searchBar.setOnClickListener {
                 requireActivity().supportFragmentManager.beginTransaction()
                     .addToBackStack(null)
@@ -43,6 +39,7 @@ class PagerFragment : Fragment() {
         return binding.root
     }
 
+    // Lifecycle callbacks to see lifecycle events on log
     override fun onResume() {
         Log.e(TAG, "onResume: PAGER_FRAGMENT ")
         super.onResume()

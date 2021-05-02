@@ -20,7 +20,6 @@ import com.example.entranceproject.data.SUGGESTIONS
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.FragmentSearchBinding
 import com.example.entranceproject.repository.Resource
-import com.example.entranceproject.ui.pager.PagerFragment
 import com.example.entranceproject.ui.stocks.StockAdapter
 import com.example.entranceproject.ui.stocks.StockItemDecoration
 import com.google.android.material.snackbar.Snackbar
@@ -120,28 +119,34 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
         return binding.root
     }
 
+    // Lifecycle callbacks to see lifecycle events on log
     override fun onResume() {
-        Log.e(TAG, "onResume: ------------------------------SEARCH_FRAGMENT ")
+        Log.e(TAG, "onResume: SEARCH_FRAGMENT ")
         super.onResume()
     }
 
     override fun onStart() {
-        Log.e(TAG, "onStart: ------------------------------SEARCH_FRAGMENT ")
+        Log.e(TAG, "onStart: SEARCH_FRAGMENT ")
         super.onStart()
     }
 
     override fun onStop() {
-        Log.e(TAG, "onStop: ------------------------------SEARCH_FRAGMENT ")
+        Log.e(TAG, "onStop: SEARCH_FRAGMENT ")
         super.onStop()
     }
 
     override fun onPause() {
-        Log.e(TAG, "onPause: ------------------------------SEARCH_FRAGMENT ")
+        Log.e(TAG, "onPause: SEARCH_FRAGMENT ")
         super.onPause()
         // Hide keyboard when the user collapses an app
         val inputMethodManager = requireActivity()
             .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+    }
+
+    override fun onDestroy() {
+        Log.e(TAG, "onDestroy: STOCKS_FRAGMENT ")
+        super.onDestroy()
     }
 
     override fun onDestroyView() {
@@ -177,30 +182,28 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
                     swipeRefreshLayout.isRefreshing = false
                     textViewError.visibility = View.GONE
                     progressBar.visibility = View.GONE
-                    stockAdapter.submitList(result.data)
 
                     textViewLabel.text = getString(R.string.stocks_found, result.data?.size)
                 }
                 Resource.Status.LOADING -> {
                     textViewError.visibility = View.GONE
-//                        if (!swipeRefreshLayout.isRefreshing)
                     progressBar.visibility = View.VISIBLE
-                    stockAdapter.submitList(result.data)
 
                     textViewLabel.text = getString(R.string.stocks)
                 }
                 Resource.Status.ERROR -> {
                     swipeRefreshLayout.isRefreshing = false
-                    Log.e(TAG, "onCreateView: ${result.error}")
-                    showSnackBar(result.error?.message!!)
-                    stockAdapter.submitList(result.data)
                     textViewError.visibility = View.VISIBLE
                     textViewNoStocks.visibility = View.GONE
                     progressBar.visibility = View.GONE
 
+                    showSnackBar(result.error?.message!!)
+                    Log.e(TAG, "onCreateView: ${result.error}")
+
                     textViewLabel.text = getString(R.string.stocks)
                 }
             }
+            stockAdapter.submitList(result.data)
         }
     }
 
@@ -262,4 +265,5 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
             arguments = Bundle().apply { }
         }
     }
+
 }

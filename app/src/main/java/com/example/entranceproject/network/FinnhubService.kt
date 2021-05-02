@@ -16,12 +16,6 @@ interface FinnhubService {
     }
 
     @Headers("$TOKEN_PARAMETER:$FINNHUB_KEY")
-    @GET("stock/symbol")
-    suspend fun getStockList(
-        @Query("exchange") exchange: String
-    ): Response<TickersDto>
-
-    @Headers("$TOKEN_PARAMETER:$FINNHUB_KEY")
     @GET("search")
     suspend fun search(
         @Query("q") query: String

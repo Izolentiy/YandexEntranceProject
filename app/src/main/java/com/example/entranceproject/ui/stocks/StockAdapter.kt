@@ -16,16 +16,13 @@ import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.ItemStockBinding
 import com.example.entranceproject.network.FinnhubService.Companion.LOGOS_URL
-import java.util.*
 
 class StockAdapter(
     private val onStarClickListener: (Stock) -> Unit
 ) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator) {
     private lateinit var layoutManager: LinearLayoutManager
 
-    override fun onCreateViewHolder(
-        parent: ViewGroup, viewType: Int
-    ): StockViewHolder = StockViewHolder(
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder = StockViewHolder(
         ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
     )
 
@@ -42,15 +39,10 @@ class StockAdapter(
     fun getCurrentVisibleItems(): List<Stock> {
         val firstVisible = layoutManager.findFirstVisibleItemPosition()
         val lastVisible = layoutManager.findLastVisibleItemPosition()
-        /*val firstCompletelyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
-        val lastCompletelyVisible = layoutManager.findLastCompletelyVisibleItemPosition()*/
 
         return try {
-            val visibleItems = currentList.subList(firstVisible, lastVisible + 1)
-            /*val completelyVisible =
-                currentList.subList(firstCompletelyVisible, lastCompletelyVisible + 1)
-            val visibleTickers = visibleItems.map(Stock::ticker)*/
-            visibleItems
+            // lastVisible + 1 need to make range last inclusive
+            currentList.subList(firstVisible, lastVisible + 1)
         } catch (error: Exception) {
             Log.e(TAG, "getCurrentVisibleItems: $error")
             emptyList()
@@ -129,11 +121,9 @@ class StockAdapter(
         }
 
         private fun prepareLogoUrl(stock: Stock): String {
-            /*
-            Replace "/us/en" and "en-us" parts to make urls recognizable for clearbit.com
-            "https://squareup.com/us/en"
-            "https://www.microsoft.com/en-us"
-            */
+            /* Replace "/us/en" and "en-us" parts to make urls recognizable for clearbit.com
+               "https://squareup.com/us/en"
+               "https://www.microsoft.com/en-us" */
             val ruUrl = "${stock.webUrl?.replaceAfter(".ru", "/")}"
             var comUrl = "${ruUrl.replaceAfter(".com", "/")}?size=64"
 
