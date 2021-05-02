@@ -42,14 +42,14 @@ class StockAdapter(
     fun getCurrentVisibleItems(): List<Stock> {
         val firstVisible = layoutManager.findFirstVisibleItemPosition()
         val lastVisible = layoutManager.findLastVisibleItemPosition()
-        val firstCompletelyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
-        val lastCompletelyVisible = layoutManager.findLastCompletelyVisibleItemPosition()
+        /*val firstCompletelyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
+        val lastCompletelyVisible = layoutManager.findLastCompletelyVisibleItemPosition()*/
 
         return try {
             val visibleItems = currentList.subList(firstVisible, lastVisible + 1)
-            val completelyVisible =
+            /*val completelyVisible =
                 currentList.subList(firstCompletelyVisible, lastCompletelyVisible + 1)
-            val visibleTickers = visibleItems.map(Stock::ticker)
+            val visibleTickers = visibleItems.map(Stock::ticker)*/
             visibleItems
         } catch (error: Exception) {
             Log.e(TAG, "getCurrentVisibleItems: $error")
@@ -80,7 +80,6 @@ class StockAdapter(
                 val radius = itemView.resources
                     .getDimensionPixelSize(R.dimen.stock_item_logo_corner_radius)
 
-                Log.d(TAG, "bind: ${stock.webUrl}\n$logoImage")
                 Glide.with(itemView)
                     .load(logoImage)
                     .error(R.drawable.bg_logo_dark_shape)
@@ -130,10 +129,11 @@ class StockAdapter(
         }
 
         private fun prepareLogoUrl(stock: Stock): String {
-            // Replace "/us/en" and "en-us" parts
-            // to make urls recognizable for clearbit.com
-            // "https://squareup.com/us/en"
-            // "https://www.microsoft.com/en-us"
+            /*
+            Replace "/us/en" and "en-us" parts to make urls recognizable for clearbit.com
+            "https://squareup.com/us/en"
+            "https://www.microsoft.com/en-us"
+            */
             val ruUrl = "${stock.webUrl?.replaceAfter(".ru", "/")}"
             var comUrl = "${ruUrl.replaceAfter(".com", "/")}?size=64"
 

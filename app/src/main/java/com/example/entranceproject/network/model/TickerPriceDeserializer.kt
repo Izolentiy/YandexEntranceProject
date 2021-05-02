@@ -18,7 +18,8 @@ class TickerPriceDeserializer : JsonDeserializer<TickerPriceDto> {
         val type = result?.get("type")?.asString
         val symbol = data?.get("s")?.asString
         val price =  data?.get("p")?.asDouble
-        return TickerPriceDto(type, symbol, price)
+        val volume =  data?.get("v")?.asDouble
+        return TickerPriceDto(type, symbol, price, volume)
     }
 }
 

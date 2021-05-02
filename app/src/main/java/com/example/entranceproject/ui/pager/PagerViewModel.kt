@@ -17,9 +17,9 @@ class PagerViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _tab = MutableStateFlow(Tab.values().first())
-    val tab = MutableStateFlow(Tab.values().first())
+    val tab get() = _tab.asStateFlow()
     private val _visibleTickers = MutableStateFlow(listOf<String>())
-    val visibleTickers = MutableStateFlow(listOf<String>())
+    val visibleTickers get() = _visibleTickers.asStateFlow()
 
     @ExperimentalCoroutinesApi
     val stocks = combine(_tab) {}
@@ -28,9 +28,7 @@ class PagerViewModel @Inject constructor(
     fun subscribeToPriceUpdates() =
         viewModelScope.launch(Dispatchers.IO) {
             repository.openSocket()
-            repository.setSubpscription(_visibleTickers)
-            _visibleTickers.collect {
-            }
+            repository.setSubscription(visibleTickers).collect()
         }
 
 

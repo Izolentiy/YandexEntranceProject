@@ -5,6 +5,7 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
+import com.example.entranceproject.network.model.TickerPriceDto
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
@@ -111,10 +112,17 @@ class Repository @Inject constructor(
 
     fun closeSocket() { webSocketHandler.closeSocket() }
 
-    fun getSocketUpdates(): StateFlow<SocketUpdate> = webSocketHandler.events
+//    fun getSocketUpdates(): StateFlow<SocketUpdate> = webSocketHandler.events
+//    fun getSocketUpdates(): Flow<TickerPriceDto> = webSocketHandler.events
 
-    suspend fun setSubpscription(tickers: StateFlow<List<String>>) {
+//    suspend fun setSubscription(tickers: StateFlow<List<String>>) {
+//        webSocketHandler.setSubscription(tickers)
+//    }
+
+    suspend fun setSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
         webSocketHandler.setSubscription(tickers)
+        val socketUpdates = webSocketHandler.events
+        return socketUpdates
     }
 
     suspend fun refreshData() {}

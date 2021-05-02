@@ -4,5 +4,6 @@ package com.example.entranceproject.network.model
 data class TickerPriceDto(
     val type: String?,
     val symbol: String?,
-    val price: Double?
+    val price: Double?,
+    val volume: Double?
 )
