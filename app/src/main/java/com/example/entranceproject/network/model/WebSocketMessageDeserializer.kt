@@ -6,20 +6,25 @@ import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
 // Socket message deserializer
-class TickerPriceDeserializer : JsonDeserializer<TickerPriceDto> {
+class WebSocketMessageDeserializer : JsonDeserializer<WebSocketMessage> {
     override fun deserialize(
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): TickerPriceDto {
+    ): WebSocketMessage {
         val result = json?.asJsonObject
-        val data = result?.get("data")?.asJsonArray?.get(0)?.asJsonObject
-
-        val type = result?.get("type")?.asString
-        val symbol = data?.get("s")?.asString
-        val price =  data?.get("p")?.asDouble
-        val volume =  data?.get("v")?.asDouble
-        return TickerPriceDto(type, symbol, price, volume)
+        return WebSocketMessage(
+            result?.get("data")?.asJsonArray?.map { data ->
+                with(data.asJsonObject) {
+                    WebSocketMessage.TickerPriceDto(
+                        type = result.get("type").asString,
+                        symbol = get("s").asString,
+                        price = get("p").asDouble,
+                        volume = get("v").asDouble,
+                        timestamp = get("t").asLong
+                    )
+                }
+            })
     }
 }
 

@@ -4,10 +4,10 @@ import android.app.Application
 import androidx.room.Room
 import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.network.FinnhubService
-import com.example.entranceproject.network.model.TickerPriceDeserializer
 import com.example.entranceproject.network.model.TickersDeserializer
-import com.example.entranceproject.network.model.TickerPriceDto
 import com.example.entranceproject.network.model.TickersDto
+import com.example.entranceproject.network.model.WebSocketMessage
+import com.example.entranceproject.network.model.WebSocketMessageDeserializer
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -36,7 +36,7 @@ object AppModule {
     @Singleton
     fun provideGson(): Gson = GsonBuilder()
         .registerTypeAdapter(TickersDto::class.java, TickersDeserializer())
-        .registerTypeAdapter(TickerPriceDto::class.java, TickerPriceDeserializer())
+        .registerTypeAdapter(WebSocketMessage::class.java, WebSocketMessageDeserializer())
         .setLenient()
         .create()
 

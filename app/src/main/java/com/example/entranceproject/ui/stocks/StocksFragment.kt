@@ -43,10 +43,7 @@ class StocksFragment : Fragment() {
     ): View {
         _binding = LayoutStockListBinding.inflate(inflater, container, false)
 
-//        Log.d(TAG, "onCreateView: Subscribed to latest prices")
-//        viewModel.subscribeToPricesUpdate(viewModel.visibleTickers)
         val stockAdapter = StockAdapter(onStarClickListener)
-//        binding.apply {
         binding.apply {
             swipeRefreshLayout.setOnRefreshListener {
                 viewModel.refreshData()
@@ -82,37 +79,6 @@ class StocksFragment : Fragment() {
             lifecycleScope.launchWhenStarted {
                 viewModel.stocks.collect { result -> handleResult(result, stockAdapter) }
             }
-            /*viewModel.stocks. observe(viewLifecycleOwner) { result ->
-                Log.d(TAG, "onCreateView: $result")
-                Log.d(TAG, "onCreateView: $stockAdapter")
-                Log.d(TAG, "onCreateView: $recyclerViewStocks")
-                if (result.data?.isEmpty() == true)
-                    textViewNoStocks.visibility = View.VISIBLE
-                else
-                    textViewNoStocks.visibility = View.GONE
-                when (result.status) {
-                    Resource.Status.SUCCESS -> {
-                        swipeRefreshLayout.isRefreshing = false
-                        textViewError.visibility = View.GONE
-                        progressBar.visibility = View.GONE
-                        stockAdapter.submitList(result.data)
-                    }
-                    Resource.Status.LOADING -> {
-                        textViewError.visibility = View.GONE
-//                        if (!swipeRefreshLayout.isRefreshing)
-                        progressBar.visibility = View.VISIBLE
-                        stockAdapter.submitList(result.data)
-                    }
-                    Resource.Status.ERROR -> {
-                        swipeRefreshLayout.isRefreshing = false
-                        Log.e(TAG, "onCreateView: ${result.error}")
-                        showSnackBar(result.error?.message!!)
-                        textViewError.visibility = View.VISIBLE
-                        textViewNoStocks.visibility = View.GONE
-                        progressBar.visibility = View.GONE
-                    }
-                }
-            }*/
         }
         return binding.root
     }
@@ -152,9 +118,7 @@ class StocksFragment : Fragment() {
     // Result processing
     private fun handleResult(result: Resource<List<Stock>>, stockAdapter: StockAdapter) {
         binding.apply {
-            Log.d(TAG, "onCreateView: $result")
-            Log.d(TAG, "onCreateView: $stockAdapter")
-            Log.d(TAG, "onCreateView: $recyclerViewStocks")
+            Log.d(TAG, "handleResult: --- --- --- ---")
             if (result.data?.isEmpty() == true)
                 textViewNoStocks.visibility = View.VISIBLE
             else

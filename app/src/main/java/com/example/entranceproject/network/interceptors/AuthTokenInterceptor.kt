@@ -1,6 +1,5 @@
-package com.example.entranceproject.network
+package com.example.entranceproject.network.interceptors
 
-import com.example.entranceproject.network.FinnhubService.Companion.BASE_URL
 import com.example.entranceproject.network.FinnhubService.Companion.FINNHUB_KEY
 import com.example.entranceproject.network.FinnhubService.Companion.TOKEN_PARAMETER
 import okhttp3.Interceptor

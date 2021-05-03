@@ -3,6 +3,7 @@ package com.example.entranceproject.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
+import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val repository: Repository
+    private val repository: Repository,
+    private val webSocketHandler: WebSocketHandler
 ) : ViewModel() {
 
     val query = MutableStateFlow("")
@@ -32,7 +34,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { repository.refreshData() }
 
     override fun onCleared() {
-        repository.closeSocket()
+        webSocketHandler.closeSocket()
     }
 
     companion object {

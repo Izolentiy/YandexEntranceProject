@@ -5,11 +5,14 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
+import com.example.entranceproject.network.model.WebSocketMessage
 import com.example.entranceproject.network.websocket.SocketUpdate
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
+import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 import kotlin.system.measureTimeMillis
@@ -17,11 +20,12 @@ import kotlin.system.measureTimeMillis
 class Repository @Inject constructor(
     private val service: FinnhubService,
     private val database: StockDatabase,
-    private val webSocketHandler: WebSocketHandler
+    private val webSocketHandler: WebSocketHandler,
+    private val gson: Gson
 ) {
     private val stockDao = database.stockDao()
 
-    // Fetch stocks info
+    // Core methods
     fun getStocks(tab: Tab) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
         shouldFetch = { stocks ->
@@ -46,21 +50,6 @@ class Repository @Inject constructor(
         saveFetchResult = { stocks -> stockDao.insertStocks(stocks) }
     )
 
-    // Update stock prices
-    fun updatePrices(tickers: List<String>) = networkBoundResource(
-        loadFromDb = { stockDao.getStocksByTicker(tickers) },
-        shouldFetch = { loadedTickers -> loadedTickers.isNotEmpty() || tickers.isNotEmpty() },
-        fetchData = { stocks ->
-            Log.d(TAG, log("UPDATE_STOCKS: ${stocks.map { stock -> stock.ticker }}"))
-            withContext(Dispatchers.IO) {
-                /*tickers.map { async { updateStockPrice(it) } }.awaitAll()*/
-                stocks.map { async { getStockPrice(it) } }.awaitAll()
-            }
-        },
-        saveFetchResult = { stocks -> stockDao.updateStocks(stocks) }
-    )
-
-    // Search for stocks
     fun searchStocks(query: String) = networkBoundResource(
         loadFromDb = { stockDao.searchStocks("%$query%") },
         shouldFetch = { query.isNotEmpty() },
@@ -76,6 +65,7 @@ class Repository @Inject constructor(
                 // Get stock data
                 foundStocks = response.asFlow()
                     .filter { it.symbol != "" }
+                    .filter { it.type == "Common Stock" || it.type == "GBR" }
                     .filter { !tickersInLocal.contains(it.symbol) }
                     .flowOn(Dispatchers.Default)
                     .map { scope.async { getStockData(it.symbol) } }
@@ -105,6 +95,7 @@ class Repository @Inject constructor(
         },
         saveFetchResult = { stocks ->
             val tickers = stocks.map { it.ticker }
+//            val inLocal = stockDao.getStocksByTicker(tickers).map { it.ticker }.toList()
             val inLocal = stockDao.getStocksByTicker(tickers).first().map { it.ticker }
             val fromNet = tickers.filter { ticker -> ticker !in inLocal }
 
@@ -117,15 +108,73 @@ class Repository @Inject constructor(
         }
     )
 
-    // Methods to manage WebSocket
-    fun openSocket() { webSocketHandler.openSocket() }
-
-    fun closeSocket() { webSocketHandler.closeSocket() }
-
-    suspend fun getSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
-        webSocketHandler.setSubscription(tickers)
-        return webSocketHandler.events
+    suspend fun receiveMinuteUpdates(tickers: StateFlow<List<String>>) {
+        val scope = CoroutineScope(coroutineContext)
+        val minuteSinceLastUpdate: (Long) -> Boolean = { lastUpdated ->
+            val currTime = System.currentTimeMillis()
+            with(TimeUnit.MILLISECONDS) { toMinutes(currTime) - toMinutes(lastUpdated) >= 1 }
+        }
+        tickers.filter { it.isNotEmpty() }.collect { tickersToListen ->
+            val stocks = stockDao.getStocksByTicker(tickersToListen).first()
+            val time = measureTimeMillis {
+                stockDao.updateStocks(
+                    stocks.asFlow()
+                        .filter {
+                            minuteSinceLastUpdate(it.priceLastUpdated) || it.currentPrice == 0.0
+                        }
+                        .map { scope.async { getStockPrice(it) } }
+                        .flowOn(Dispatchers.IO)
+                        .buffer()
+                        .map { it.await() }
+                        .flowOn(Dispatchers.Default)
+                        .catch { emit(Stock("")) }
+                        .filter { it.ticker != "" }
+                        .toList()
+                )
+            }
+            Log.d(TAG, log("subscribeTo: ${tickers.value}, UPDATE TOOK: $time ms"))
+        }
     }
+
+    // Methods to manage WebSocket
+//    fun openSocket() { webSocketHandler.openSocket() }
+
+//    fun closeSocket() { webSocketHandler.closeSocket() }
+
+//    suspend fun getSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
+//        webSocketHandler.setSubscription(tickers)
+//        return webSocketHandler.events
+//    }
+
+//    suspend fun subscribeTo(tickers: StateFlow<List<String>>) {
+//        webSocketHandler.setSubscription(tickers)
+//        webSocketHandler.events.collect { Log.d(TAG, "subscribeTo: $it") }
+//        webSocketHandler.sharedFlow.collect { Log.e(TAG, "--------: $it") }
+//            .filter {  }
+//            .filter { it.error == null }
+//            .map { gson.fromJson(it.text, WebSocketMessage::class.java) }
+//            .map { webSocketMessage ->
+//                Log.d(TAG, "subscribeTo: ------- price updating")
+//                webSocketMessage.listOfPrices?.forEach {
+//                    val stock = stockDao.getStock(it.symbol)
+//                    stockDao.update(stock.copy(
+//                        ticker = it.symbol,
+//                        currentPrice = it.price,
+//                        priceLastUpdated = it.timestamp
+//                    ))
+//                }
+//            }.collect()
+
+//        webSocketHandler.sharedFlow
+//            .filter { it.symbol != null && it.symbol != "" }
+//            .map { tickerPrice ->
+//                with(tickerPrice) {
+//                    val stock = stockDao.getStock(symbol!!)
+//                    stockDao.update(stock.copy(ticker = symbol, currentPrice = price!!))
+//                }
+//            }
+//            .collect()
+//    }
 
     // ---
     suspend fun refreshData() { /*TODO("Implement data refreshing")*/}
@@ -137,7 +186,11 @@ class Repository @Inject constructor(
         val quoteData = service.getQuoteData(stock.ticker)
         with(quoteData) {
             Log.d(TAG, log("GET_STOCK_PRICE: ${stock.ticker}"))
-            return stock.copy(currentPrice = c ?: 0.0, openPrice = o ?: 0.0)
+            return stock.copy(
+                currentPrice = c ?: 0.0,
+                openPrice = o ?: 0.0,
+                priceLastUpdated = System.currentTimeMillis()
+            )
         }
     }
 
