@@ -58,14 +58,17 @@ class Repository @Inject constructor(
             val tickersInLocal = stocks.map { it.ticker }
             var foundStocks = setOf<Stock>()
 
-            val response = service.search(query).result
-            response.forEach { Log.d(TAG, "searchStocks: $it") }
+            val request = service.search(query)
 
-            val time = measureTimeMillis {
+            if (request.isSuccessful) {
+                val startTime = System.currentTimeMillis()
+                val response = request.body()?.result!!
+                response.forEach { Log.d(TAG, "searchStocks: $it") }
+
                 // Get stock data
                 foundStocks = response.asFlow()
                     .filter { it.symbol != "" }
-                    .filter { it.type == "Common Stock" || it.type == "GBR" }
+                    /*.filter { it.type == "Common Stock" || it.type == "GBR" }*/
                     .filter { !tickersInLocal.contains(it.symbol) }
                     .flowOn(Dispatchers.Default)
                     .map { scope.async { getStockData(it.symbol) } }
@@ -89,13 +92,14 @@ class Repository @Inject constructor(
                     .flowOn(Dispatchers.Default)
                     .catch { emit(Stock("")) }
                     .toSet()
+
+                val time = startTime - System.currentTimeMillis()
+                Log.d(TAG, log("searchStocks: QUERY=$query, SEARCH TOOK: $time ms"))
             }
-            Log.d(TAG, log("searchStocks: QUERY=$query, SEARCH TOOK: $time ms"))
             foundStocks
         },
         saveFetchResult = { stocks ->
             val tickers = stocks.map { it.ticker }
-//            val inLocal = stockDao.getStocksByTicker(tickers).map { it.ticker }.toList()
             val inLocal = stockDao.getStocksByTicker(tickers).first().map { it.ticker }
             val fromNet = tickers.filter { ticker -> ticker !in inLocal }
 
@@ -137,7 +141,7 @@ class Repository @Inject constructor(
     }
 
     // Methods to manage WebSocket
-//    fun openSocket() { webSocketHandler.openSocket() }
+/*//    fun openSocket() { webSocketHandler.openSocket() }
 
 //    fun closeSocket() { webSocketHandler.closeSocket() }
 
@@ -174,7 +178,7 @@ class Repository @Inject constructor(
 //                }
 //            }
 //            .collect()
-//    }
+//    }*/
 
     // ---
     suspend fun refreshData() { /*TODO("Implement data refreshing")*/}
@@ -184,21 +188,21 @@ class Repository @Inject constructor(
     // Helper methods
     private suspend fun getStockPrice(stock: Stock): Stock {
         val quoteData = service.getQuoteData(stock.ticker)
-        with(quoteData) {
+        return if (quoteData.isSuccessful) with(quoteData.body()!!) {
             Log.d(TAG, log("GET_STOCK_PRICE: ${stock.ticker}"))
-            return stock.copy(
+            stock.copy(
                 currentPrice = c ?: 0.0,
                 openPrice = o ?: 0.0,
                 priceLastUpdated = System.currentTimeMillis()
             )
-        }
+        } else Stock(ticker = "")
     }
 
     private suspend fun getStockData(ticker: String): Stock {
         val companyData = service.getCompanyProfile(ticker)
-        with(companyData) {
+        return if (companyData.isSuccessful) with(companyData.body()!!) {
             Log.d(TAG, log("GET_COMPANY_DATA: $ticker"))
-            return Stock(
+            Stock(
                 ticker = this.ticker ?: "",
                 companyName = name,
                 companyLogo = logo,
@@ -206,7 +210,7 @@ class Repository @Inject constructor(
                 country = country,
                 currency = currency,
             )
-        }
+        } else Stock(ticker = "")
     }
 
     companion object {

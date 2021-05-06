@@ -19,23 +19,23 @@ interface FinnhubService {
     @GET("search")
     suspend fun search(
         @Query("q") query: String
-    ): SearchResultDto
+    ): Response<SearchResultDto>
 
     @Headers("$TOKEN_PARAMETER:$FINNHUB_KEY")
     @GET("stock/profile2")
     suspend fun getCompanyProfile(
         @Query("symbol") symbol: String
-    ): CompanyProfileDto
+    ): Response<CompanyProfileDto>
 
     @Headers("$TOKEN_PARAMETER:$FINNHUB_KEY")
     @GET("quote")
     suspend fun getQuoteData(
         @Query("symbol") symbol: String
-    ): QuoteDto
+    ): Response<QuoteDto>
 
     @GET
     suspend fun getMostWatchedTickers(
         @Url url: String = "https://mboum.com/api/v1/tr/trending?apikey=$MBOUM_KEY"
-    ): TickersDto
+    ): Response<TickersDto>
 
 }

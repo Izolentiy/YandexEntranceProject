@@ -43,7 +43,7 @@ class WebSocketHandler @Inject constructor(
     fun openSocket() {
         val request = Request.Builder().url("$WEB_SOCKET_URL?token=$FINNHUB_KEY").build()
         webSocket = socketClient.newWebSocket(request, this)
-        socketClient.dispatcher().executorService().shutdown()
+        socketClient.dispatcher.executorService.shutdown()
     }
 
     fun closeSocket() {
