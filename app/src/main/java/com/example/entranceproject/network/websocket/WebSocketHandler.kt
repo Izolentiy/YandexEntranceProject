@@ -30,6 +30,9 @@ class WebSocketHandler @Inject constructor(
     private val listeningTickers = mutableListOf<String>()
     private var webSocket: WebSocket? = null
 
+    private val _sharedFlow = MutableSharedFlow<WebSocketMessage>()
+    val sharedFlow get() = _sharedFlow.asSharedFlow()
+
     // There I tried to use shared flows but it didn't work.
     /*private val _sharedFlow = MutableSharedFlow<SocketUpdate>()
     val sharedFlow
@@ -70,15 +73,15 @@ class WebSocketHandler @Inject constructor(
     private fun subscribeTo(ticker: String) {
         listeningTickers.add(ticker)
         val request = """{"type":"subscribe","symbol":"$ticker"}"""
-        webSocket!!.send(request)
-        Log.d(TAG, "subscribeTo: $ticker")
+        webSocket?.send(request)
+        Log.d(TAG, "subscribeTo: $ticker, webSocket is null: ${webSocket == null}")
     }
 
     private fun unsubscribeFrom(ticker: String) {
         listeningTickers.remove(ticker)
         val request = """{"type":"unsubscribe","symbol":"$ticker"}"""
-        webSocket!!.send(request)
-        Log.d(TAG, "unsubscribeFrom: $ticker")
+        webSocket?.send(request)
+        Log.d(TAG, "unsubscribeFrom: $ticker, webSocket is null: ${webSocket == null}")
     }
 
     // Socket callbacks
@@ -91,7 +94,7 @@ class WebSocketHandler @Inject constructor(
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        Log.d(TAG, "onMessage: $text")
+        /*Log.d(TAG, "onMessage: $text")*/
         val socketUpdate = gson.fromJson(text, WebSocketMessage::class.java)
         updateScope?.launch {
             socketUpdate.listOfPrices?.forEach {
@@ -104,6 +107,10 @@ class WebSocketHandler @Inject constructor(
                 Log.d(TAG, "onMessage: price updated")
             }
         }
+        /*updateScope?.launch {
+            _sharedFlow.emit(socketUpdate)
+            Log.d(TAG, "onMessage: emitted: $socketUpdate")
+        }*/
 
 //        _events.value = SocketUpdate(text)
 //        updateScope?.launch { _sharedFlow.emit(SocketUpdate(text)) }

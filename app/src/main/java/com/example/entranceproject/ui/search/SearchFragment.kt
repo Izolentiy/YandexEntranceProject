@@ -87,7 +87,8 @@ class SearchFragment : Fragment(), SearchView.OnQueryTextListener {
         }
 
         // Configure stock list
-        val stockAdapter = StockAdapter(onStarClickListener)
+        val priceUpdates = viewModel.getSubscription()
+        val stockAdapter = StockAdapter(onStarClickListener, priceUpdates)
         binding.layoutSearchResult.apply {
             swipeRefreshLayout.setOnRefreshListener {
 //                    viewModel.refreshData()

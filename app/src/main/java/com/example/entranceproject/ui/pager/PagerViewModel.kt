@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
+import com.example.entranceproject.network.model.WebSocketMessage
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,8 @@ class PagerViewModel @Inject constructor(
             webSocketHandler.openSocket()
             webSocketHandler.setSubscription(visibleTickers)
         }
+
+    fun getPriceUpdates() = webSocketHandler.sharedFlow
 
     fun unsubscribeFromPriceUpdate() = viewModelScope.launch { webSocketHandler.closeSocket() }
 

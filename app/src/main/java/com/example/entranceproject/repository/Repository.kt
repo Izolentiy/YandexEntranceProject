@@ -28,9 +28,7 @@ class Repository @Inject constructor(
     // Core methods
     fun getStocks(tab: Tab) = networkBoundResource(
         loadFromDb = { stockDao.getStocks(tab) },
-        shouldFetch = { stocks ->
-            if (tab == Tab.FAVORITE) false
-            else stocks.isEmpty()
+        shouldFetch = { stocks -> stocks.isEmpty()
         },
         fetchData = {
             val scope = CoroutineScope(coroutineContext)

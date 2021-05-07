@@ -1,5 +1,6 @@
 package com.example.entranceproject.ui.stocks
 
+import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -16,21 +17,42 @@ import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.ItemStockBinding
 import com.example.entranceproject.network.FinnhubService.Companion.LOGOS_URL
+import com.example.entranceproject.network.model.WebSocketMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharedFlow
+import java.util.*
 
 class StockAdapter(
-    private val onStarClickListener: (Stock) -> Unit
+    private val onStarClickListener: (Stock) -> Unit,
+    private val listeningTickers: SharedFlow<WebSocketMessage>
 ) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator) {
     private lateinit var layoutManager: LinearLayoutManager
+    private var currentVisible = mutableListOf<Stock>()
+    private val stockAdapterScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder = StockViewHolder(
         ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
     )
 
     override fun onBindViewHolder(holder: StockViewHolder, position: Int) {
-        val currentItem = getItem(position)
-        if (currentItem != null)
-            holder.bind(currentItem)
+        holder.bind(getItem(position))
     }
+
+    /*override fun onBindViewHolder(
+        holder: StockViewHolder, position: Int, payloads: MutableList<Any>
+    ) {
+        super.onBindViewHolder(holder, position, payloads)
+        *//*if (payloads.isEmpty())
+            super.onBindViewHolder(holder, position, payloads)
+        else payloads.forEach { it as Bundle
+            val isFavorite = it.getBoolean(IS_FAVORITE)
+            holder.updateFavorite(isFavorite)
+            *//**//*val currentPrice = it.getDouble(CURRENT_PRICE)
+            val dailyDelta = it.getDouble(DAILY_DELTA)
+            holder.updatePrice(currentPrice, dailyDelta)*//**//*
+        }*//*
+    }*/
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -42,7 +64,8 @@ class StockAdapter(
 
         return try {
             // lastVisible + 1 need to make range last inclusive
-            currentList.subList(firstVisible, lastVisible + 1)
+            currentVisible = currentList.subList(firstVisible, lastVisible)
+            currentVisible
         } catch (error: Exception) {
             Log.e(TAG, "getCurrentVisibleItems: $error")
             emptyList()
@@ -51,6 +74,10 @@ class StockAdapter(
 
     companion object {
         private val TAG = "${StockAdapter::class.java.simpleName}_TAG"
+
+        const val CURRENT_PRICE = "current_price"
+        const val DAILY_DELTA = "daily_delta"
+        const val IS_FAVORITE = "is_favorite"
     }
 
     inner class StockViewHolder(private val binding: ItemStockBinding) :
@@ -68,56 +95,52 @@ class StockAdapter(
                 val logoImage =
                     if (stock.webUrl?.isNotEmpty() == true) prepareLogoUrl(stock)
                     else stock.companyLogo ?: ""
-
-                val radius = itemView.resources
+                val logoCornerRadius = itemView.resources
                     .getDimensionPixelSize(R.dimen.stock_item_logo_corner_radius)
 
                 Glide.with(itemView)
                     .load(logoImage)
                     .error(R.drawable.bg_logo_dark_shape)
-                    .transform(FitCenter(), RoundedCorners(radius))
+                    .transform(FitCenter(), RoundedCorners(logoCornerRadius))
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .into(imageLogo)
-
-                // Star icon
-                val starIcon =
-                    if (stock.isFavorite) R.drawable.ic_star_colored else R.drawable.ic_star
-                imageViewStar.setImageDrawable(
-                    ResourcesCompat.getDrawable(
-                        itemView.resources, starIcon, itemView.context.theme
-                    )
-                )
 
                 // Company name and stock ticker
                 textViewCompanyName.text = stock.companyName
                 textViewTicker.text = stock.ticker
 
-                // Get currency symbol
-                val currency = "$"
-//                val currency = try {
-//                    /*stock.country?.let { country ->
-//                        Currency.getInstance(Locale(country, country)).symbol.last()
-//                    } ?: "$"*/
-//                    if (stock.currency == "RUB") "₽"
-//                    else Currency.getInstance(stock?.currency).symbol.last()
-//                } catch (error: IllegalArgumentException) {
-//                    ""
-//                }
+                // Star icon
+                updateFavorite(stock.isFavorite)
 
-                // Price and day delta
-                textViewCurrentPrice.text = itemView.resources
-                    .getString(R.string.price, currency, stock.currentPrice)
-                textViewDayDelta.text = itemView.resources
-                    .getString(R.string.price, currency, stock.dailyDelta)
-
-                // Daily delta color
-                val deltaColor = if (stock.dailyDelta >= 0) R.color.green else R.color.red
-                textViewDayDelta.setTextColor(
-                    ResourcesCompat.getColor(
-                        itemView.resources, deltaColor, itemView.context.theme
-                    )
-                )
+                // Price and daily delta, color text
+                updatePrice(stock.currentPrice, stock.dailyDelta)
             }
+        }
+
+        fun updatePrice(currentPrice: Double, dailyDelta: Double) {
+            // Get currency symbol, Finnhub returns all prices in USD
+            val currency = Currency.getInstance("USD").symbol
+
+            binding.apply {
+                textViewCurrentPrice.text = itemView.resources
+                    .getString(R.string.price, currency, currentPrice)
+                textViewDayDelta.text = itemView.resources
+                    .getString(R.string.price, currency, dailyDelta)
+
+                val deltaColor = if (dailyDelta >= 0) R.color.green else R.color.red
+                val deltaTextColor = ResourcesCompat
+                    .getColor(itemView.resources, deltaColor, itemView.context.theme)
+                textViewDayDelta.setTextColor(deltaTextColor)
+            }
+
+
+        }
+
+        fun updateFavorite(isFavorite: Boolean) {
+            val starIcon = if (isFavorite) R.drawable.ic_star_colored else R.drawable.ic_star
+            val starImageDrawable = ResourcesCompat
+                .getDrawable(itemView.resources, starIcon, itemView.context.theme)
+            binding.imageViewStar.setImageDrawable(starImageDrawable)
         }
 
         private fun prepareLogoUrl(stock: Stock): String {
@@ -125,19 +148,29 @@ class StockAdapter(
                "https://squareup.com/us/en"
                "https://www.microsoft.com/en-us" */
             val ruUrl = "${stock.webUrl?.replaceAfter(".ru", "/")}"
-            var comUrl = "${ruUrl.replaceAfter(".com", "/")}?size=64"
+            var comUrl = ruUrl.replaceAfter(".com", "/")
 
             /* Special treatment for Yandex because it has https://yandex.com/ domain
                and it clearbit doesn't have icon for yandex.com
                the same situation for Alibaba */
-            if (stock.ticker == "YNDX") comUrl = "https://yandex.ru/?size=64"
-            if (stock.ticker == "BABA") comUrl = "https://alibaba.com/?size=64"
+            if (stock.ticker == "YNDX") comUrl = "https://yandex.ru/"
+            if (stock.ticker == "BABA") comUrl = "https://alibaba.com/"
             return "$LOGOS_URL$comUrl"
         }
 
     }
 
     object StockComparator : DiffUtil.ItemCallback<Stock>() {
+        /*override fun getChangePayload(oldItem: Stock, newItem: Stock) = Bundle().apply {
+            if (oldItem.isFavorite != newItem.isFavorite)
+                putBoolean(IS_FAVORITE, newItem.isFavorite)
+            if (oldItem.currentPrice != newItem.currentPrice) {
+                putDouble(CURRENT_PRICE, newItem.currentPrice)
+                putDouble(DAILY_DELTA, newItem.dailyDelta)
+            }
+        }*/
+
+
         override fun areItemsTheSame(oldItem: Stock, newItem: Stock): Boolean =
             oldItem.ticker == newItem.ticker
 

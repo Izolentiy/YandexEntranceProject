@@ -43,7 +43,8 @@ class StocksFragment : Fragment() {
     ): View {
         _binding = LayoutStockListBinding.inflate(inflater, container, false)
 
-        val stockAdapter = StockAdapter(onStarClickListener)
+        val priceUpdates = viewModel.getPriceUpdates()
+        val stockAdapter = StockAdapter(onStarClickListener, priceUpdates)
         binding.apply {
             swipeRefreshLayout.setOnRefreshListener {
                 viewModel.refreshData()
