@@ -1,10 +1,8 @@
 package com.example.entranceproject.ui.pager
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.entranceproject.data.model.Stock
-import com.example.entranceproject.network.model.WebSocketMessage
 import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +18,10 @@ class PagerViewModel @Inject constructor(
     private val webSocketHandler: WebSocketHandler
 ) : ViewModel() {
 
+    init {
+        if (!webSocketHandler.webSocketIsOpened) webSocketHandler.openSocket()
+    }
+
     private val _tab = MutableStateFlow(Tab.values().first())
     val tab get() = _tab.asStateFlow()
     private val _visibleTickers = MutableStateFlow(listOf<String>())
@@ -30,18 +32,10 @@ class PagerViewModel @Inject constructor(
         .flatMapLatest { repository.getStocks(_tab.value).flowOn(Dispatchers.IO) }
 
     fun subscribeToPriceUpdates() =
-        viewModelScope.launch(Dispatchers.IO) {
-//            repository.getEveryMinuteUpdates(visibleTickers)
-//            repository.openSocket()
-//            repository.subscribeTo(visibleTickers)
-//            repository.getSubscription(visibleTickers).collect()
-            webSocketHandler.openSocket()
-            webSocketHandler.setSubscription(visibleTickers)
-        }
+        viewModelScope.launch(Dispatchers.IO) { webSocketHandler.setSubscription(visibleTickers) }
 
-    fun getPriceUpdates() = webSocketHandler.sharedFlow
-
-    fun unsubscribeFromPriceUpdate() = viewModelScope.launch { webSocketHandler.closeSocket() }
+    fun unsubscribeFromPriceUpdates() =
+        viewModelScope.launch(Dispatchers.IO) { webSocketHandler.cancelSubscription() }
 
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }

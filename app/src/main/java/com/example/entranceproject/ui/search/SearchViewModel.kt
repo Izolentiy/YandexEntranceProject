@@ -30,8 +30,6 @@ class SearchViewModel @Inject constructor(
     fun updateFavorite(stock: Stock) =
         viewModelScope.launch(Dispatchers.IO) { repository.updateFavorite(stock) }
 
-    fun getSubscription() = webSocketHandler.sharedFlow
-
     fun refreshData() =
         viewModelScope.launch(Dispatchers.IO) { repository.refreshData() }
 

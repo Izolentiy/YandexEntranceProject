@@ -8,14 +8,13 @@ import com.example.entranceproject.network.model.WebSocketMessage
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import okhttp3.*
 import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
 
-@Singleton
 class WebSocketHandler @Inject constructor(
     private val socketClient: OkHttpClient,
     private val database: StockDatabase,
@@ -24,24 +23,17 @@ class WebSocketHandler @Inject constructor(
     private val stockDao = database.stockDao()
 
     // To manage update coroutine lifecycle
-    private val updateJob = Job()
+    private var updateJob: Job? = null
     private var updateScope: CoroutineScope? = null
 
-    private val listeningTickers = mutableListOf<String>()
+    private val listeningTickers = mutableSetOf<String>()
     private var webSocket: WebSocket? = null
 
-    private val _sharedFlow = MutableSharedFlow<WebSocketMessage>()
-    val sharedFlow get() = _sharedFlow.asSharedFlow()
+    private var _webSocketIsOpened = false
+    val webSocketIsOpened get() = _webSocketIsOpened
 
-    // There I tried to use shared flows but it didn't work.
-    /*private val _sharedFlow = MutableSharedFlow<SocketUpdate>()
-    val sharedFlow
-        get() = _sharedFlow.asSharedFlow()
-            .filter { it.error == null }
-            .map { gson.fromJson(it.text, WebSocketMessage::class.java) }
-
-    private val _events = MutableStateFlow(SocketUpdate())
-    val events get() = _events.asStateFlow()*/
+    /*private val _webSocketMessages = MutableSharedFlow<WebSocketMessage>()
+    val webSocketMessages get() = webSocketMessages.asSharedFlow()*/
 
     fun openSocket() {
         val request = Request.Builder().url("$WEB_SOCKET_URL?token=$FINNHUB_KEY").build()
@@ -59,16 +51,26 @@ class WebSocketHandler @Inject constructor(
     }
 
     suspend fun setSubscription(tickersToListen: StateFlow<List<String>>) {
-        updateScope = CoroutineScope(coroutineContext + updateJob)
-        tickersToListen.collect { tickers ->
+        updateJob = Job()
+        updateScope = CoroutineScope(coroutineContext + updateJob!!)
+        Log.d(TAG, "setSubscription: updateScope = $updateScope")
+        updateScope!!.launch {  }
+        tickersToListen.onStart {
+            while (!_webSocketIsOpened)
+                delay(200)
+        }.onEach { tickers ->
             Log.d(TAG, "setSubscription: subscriptions: $listeningTickers")
             listeningTickers.filter { !tickers.contains(it) }.forEach { unsubscribeFrom(it) }
             tickers.filter { !listeningTickers.contains(it) }.forEach { subscribeTo(it) }
             Log.d(TAG, "setSubscription: subscriptions: $listeningTickers")
-        }
+        }.onCompletion {
+            Log.d(TAG, "setSubscription: onCompletion")
+            // reversed() used to avoid ConcurrentModificationException
+            listeningTickers.reversed().forEach { unsubscribeFrom(it) }
+        }.launchIn(updateScope!!)
     }
 
-    suspend fun cancelSubscription() { updateJob.cancel() }
+    suspend fun cancelSubscription() { updateJob?.cancel() }
 
     private fun subscribeTo(ticker: String) {
         listeningTickers.add(ticker)
@@ -86,17 +88,14 @@ class WebSocketHandler @Inject constructor(
 
     // Socket callbacks
     override fun onOpen(webSocket: WebSocket, response: Response) {
-        listeningTickers.forEach { ticker ->
-            webSocket.send("""{"type":"subscribe","symbol":"$ticker"}""")
-        }
-//        updateScope?.launch { testSharedFlow.emit("---- opened") }
+        _webSocketIsOpened = true
         Log.d(TAG, "onOpen: WEB SOCKET OPENED")
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        /*Log.d(TAG, "onMessage: $text")*/
         val socketUpdate = gson.fromJson(text, WebSocketMessage::class.java)
         updateScope?.launch {
+            Log.d(TAG, "onMessage: $text")
             socketUpdate.listOfPrices?.forEach {
                 val stock = stockDao.getStock(it.symbol)
                 stockDao.update(stock.copy(
@@ -104,38 +103,23 @@ class WebSocketHandler @Inject constructor(
                     currentPrice = it.price,
                     priceLastUpdated = it.timestamp
                 ))
-                Log.d(TAG, "onMessage: price updated")
             }
         }
         /*updateScope?.launch {
             _sharedFlow.emit(socketUpdate)
             Log.d(TAG, "onMessage: emitted: $socketUpdate")
         }*/
-
-//        _events.value = SocketUpdate(text)
-//        updateScope?.launch { _sharedFlow.emit(SocketUpdate(text)) }
-//        _sharedFlow.tryEmit(SocketUpdate(text))
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        Log.d(TAG, "onFailure: ${t.message}")
-
-//        _events.value = SocketUpdate(error = t)
-//        updateScope?.launch { _sharedFlow.emit(SocketUpdate(error = t)) }
-//        _sharedFlow.tryEmit(SocketUpdate(error = t))
+        Log.e(TAG, "onFailure: response = $response, error = $t")
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-        Log.d(TAG, "onClosing: $reason")
-
-//        _events.value = SocketUpdate(error = SocketAbortedException())
-//        updateScope?.launch { _sharedFlow.emit(SocketUpdate(error = SocketAbortedException())) }
-//        _sharedFlow.tryEmit(SocketUpdate(error = SocketAbortedException()))
-        webSocket.close(NORMAL_CLOSURE_STATUS, null)
-    }
-
-    override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-        super.onClosed(webSocket, code, reason)
+        updateJob?.cancel()
+        webSocket.close(NORMAL_CLOSURE_STATUS, reason)
+        _webSocketIsOpened = false
+        Log.d(TAG, "onClosing: reason = $reason, code = $code")
     }
 
     companion object {

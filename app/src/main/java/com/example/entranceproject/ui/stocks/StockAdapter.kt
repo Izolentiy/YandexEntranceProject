@@ -17,19 +17,12 @@ import com.example.entranceproject.R
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.databinding.ItemStockBinding
 import com.example.entranceproject.network.FinnhubService.Companion.LOGOS_URL
-import com.example.entranceproject.network.model.WebSocketMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharedFlow
 import java.util.*
 
 class StockAdapter(
-    private val onStarClickListener: (Stock) -> Unit,
-    private val listeningTickers: SharedFlow<WebSocketMessage>
+    private val onStarClickListener: (Stock) -> Unit
 ) : ListAdapter<Stock, StockAdapter.StockViewHolder>(StockComparator) {
     private lateinit var layoutManager: LinearLayoutManager
-    private var currentVisible = mutableListOf<Stock>()
-    private val stockAdapterScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder = StockViewHolder(
         ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -39,20 +32,23 @@ class StockAdapter(
         holder.bind(getItem(position))
     }
 
-    /*override fun onBindViewHolder(
+    override fun onBindViewHolder(
         holder: StockViewHolder, position: Int, payloads: MutableList<Any>
     ) {
-        super.onBindViewHolder(holder, position, payloads)
-        *//*if (payloads.isEmpty())
+        if (payloads.isEmpty())
             super.onBindViewHolder(holder, position, payloads)
         else payloads.forEach { it as Bundle
-            val isFavorite = it.getBoolean(IS_FAVORITE)
-            holder.updateFavorite(isFavorite)
-            *//**//*val currentPrice = it.getDouble(CURRENT_PRICE)
-            val dailyDelta = it.getDouble(DAILY_DELTA)
-            holder.updatePrice(currentPrice, dailyDelta)*//**//*
-        }*//*
-    }*/
+            if (it.containsKey(IS_FAVORITE)) {
+                val isFavorite = it.getBoolean(IS_FAVORITE)
+                holder.updateFavorite(isFavorite)
+            }
+            if (it.containsKey(CURRENT_PRICE) && it.containsKey(DAILY_DELTA)) {
+                val currentPrice = it.getDouble(CURRENT_PRICE)
+                val dailyDelta = it.getDouble(DAILY_DELTA)
+                holder.updatePrice(currentPrice, dailyDelta)
+            }
+        }
+    }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -64,8 +60,7 @@ class StockAdapter(
 
         return try {
             // lastVisible + 1 need to make range last inclusive
-            currentVisible = currentList.subList(firstVisible, lastVisible)
-            currentVisible
+            currentList.subList(firstVisible, lastVisible + 1)
         } catch (error: Exception) {
             Log.e(TAG, "getCurrentVisibleItems: $error")
             emptyList()
@@ -161,14 +156,14 @@ class StockAdapter(
     }
 
     object StockComparator : DiffUtil.ItemCallback<Stock>() {
-        /*override fun getChangePayload(oldItem: Stock, newItem: Stock) = Bundle().apply {
-            if (oldItem.isFavorite != newItem.isFavorite)
-                putBoolean(IS_FAVORITE, newItem.isFavorite)
+        override fun getChangePayload(oldItem: Stock, newItem: Stock) = Bundle().apply {
             if (oldItem.currentPrice != newItem.currentPrice) {
                 putDouble(CURRENT_PRICE, newItem.currentPrice)
                 putDouble(DAILY_DELTA, newItem.dailyDelta)
             }
-        }*/
+            if (oldItem.isFavorite != newItem.isFavorite)
+                putBoolean(IS_FAVORITE, newItem.isFavorite)
+        }
 
 
         override fun areItemsTheSame(oldItem: Stock, newItem: Stock): Boolean =

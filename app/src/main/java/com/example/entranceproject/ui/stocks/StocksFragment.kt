@@ -43,8 +43,7 @@ class StocksFragment : Fragment() {
     ): View {
         _binding = LayoutStockListBinding.inflate(inflater, container, false)
 
-        val priceUpdates = viewModel.getPriceUpdates()
-        val stockAdapter = StockAdapter(onStarClickListener, priceUpdates)
+        val stockAdapter = StockAdapter(onStarClickListener)
         binding.apply {
             swipeRefreshLayout.setOnRefreshListener {
                 viewModel.refreshData()
@@ -55,28 +54,13 @@ class StocksFragment : Fragment() {
             decorateStockList(recyclerViewStocks)
             recyclerViewStocks.adapter = stockAdapter
             recyclerViewStocks.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        val tickers = stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
-                        Log.d(TAG, "onScrollStateChanged: $tickers")
-                        viewModel.setVisibleTickers(tickers)
-                    }
-                }
-
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    if (viewModel.visibleTickers.value.isEmpty()) {
-                        val tickers = stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
-                        Log.d(TAG, "onScrolled: $tickers")
-                        viewModel.setVisibleTickers(tickers)
-                        viewModel.subscribeToPriceUpdates()
-                    }
+                    val tickers = stockAdapter.getCurrentVisibleItems().map(Stock::ticker)
+                    Log.d(TAG, "onScrolled: $tickers")
+                    viewModel.setVisibleTickers(tickers)
                 }
             })
 
-
-//            viewModel.stocks.observe(viewLifecycleOwner) { result ->
-//                handleResult(result, stockAdapter)
-//            }
             lifecycleScope.launchWhenStarted {
                 viewModel.stocks.collect { result -> handleResult(result, stockAdapter) }
             }
@@ -88,6 +72,8 @@ class StocksFragment : Fragment() {
     override fun onResume() {
         Log.e(TAG, "onResume: STOCKS_FRAGMENT ${viewModel.tab.value}")
         super.onResume()
+        calculateVisibleTickers()
+        viewModel.subscribeToPriceUpdates()
     }
 
     override fun onStart() {
@@ -103,6 +89,7 @@ class StocksFragment : Fragment() {
     override fun onPause() {
         Log.e(TAG, "onPause: STOCKS_FRAGMENT ${viewModel.tab.value}")
         super.onPause()
+        viewModel.unsubscribeFromPriceUpdates()
     }
 
     override fun onDestroy() {
@@ -111,7 +98,7 @@ class StocksFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        Log.e(TAG, "onDestroyView: STOCKS_FRAGMENT ${viewModel.visibleTickers}")
+        Log.e(TAG, "onDestroyView: STOCKS_FRAGMENT ${viewModel.tab.value}")
         super.onDestroyView()
         _binding = null
     }
@@ -119,7 +106,6 @@ class StocksFragment : Fragment() {
     // Result processing
     private fun handleResult(result: Resource<List<Stock>>, stockAdapter: StockAdapter) {
         binding.apply {
-            Log.d(TAG, "handleResult: --- --- --- ---")
             if (result.data?.isEmpty() == true)
                 textViewNoStocks.visibility = View.VISIBLE
             else
@@ -165,6 +151,13 @@ class StocksFragment : Fragment() {
             addItemDecoration(decoration)
             hasFixedSize()
         }
+    }
+
+    private fun calculateVisibleTickers() {
+        val adapter = binding.recyclerViewStocks.adapter as StockAdapter
+        val tickers = adapter.getCurrentVisibleItems().map(Stock::ticker)
+        Log.d(TAG, "calculateVisibleTickers: $tickers")
+        viewModel.setVisibleTickers(tickers)
     }
 
     private fun showSnackBar(message: String) {

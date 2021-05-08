@@ -5,11 +5,7 @@ import com.example.entranceproject.data.StockDatabase
 import com.example.entranceproject.data.model.Stock
 import com.example.entranceproject.network.FinnhubService
 import com.example.entranceproject.network.TRENDING_TICKERS
-import com.example.entranceproject.network.model.WebSocketMessage
-import com.example.entranceproject.network.websocket.SocketUpdate
-import com.example.entranceproject.network.websocket.WebSocketHandler
 import com.example.entranceproject.ui.pager.Tab
-import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
@@ -19,9 +15,7 @@ import kotlin.system.measureTimeMillis
 
 class Repository @Inject constructor(
     private val service: FinnhubService,
-    private val database: StockDatabase,
-    private val webSocketHandler: WebSocketHandler,
-    private val gson: Gson
+    private val database: StockDatabase
 ) {
     private val stockDao = database.stockDao()
 
@@ -138,52 +132,11 @@ class Repository @Inject constructor(
         }
     }
 
-    // Methods to manage WebSocket
-/*//    fun openSocket() { webSocketHandler.openSocket() }
-
-//    fun closeSocket() { webSocketHandler.closeSocket() }
-
-//    suspend fun getSubscription(tickers: StateFlow<List<String>>): StateFlow<SocketUpdate> {
-//        webSocketHandler.setSubscription(tickers)
-//        return webSocketHandler.events
-//    }
-
-//    suspend fun subscribeTo(tickers: StateFlow<List<String>>) {
-//        webSocketHandler.setSubscription(tickers)
-//        webSocketHandler.events.collect { Log.d(TAG, "subscribeTo: $it") }
-//        webSocketHandler.sharedFlow.collect { Log.e(TAG, "--------: $it") }
-//            .filter {  }
-//            .filter { it.error == null }
-//            .map { gson.fromJson(it.text, WebSocketMessage::class.java) }
-//            .map { webSocketMessage ->
-//                Log.d(TAG, "subscribeTo: ------- price updating")
-//                webSocketMessage.listOfPrices?.forEach {
-//                    val stock = stockDao.getStock(it.symbol)
-//                    stockDao.update(stock.copy(
-//                        ticker = it.symbol,
-//                        currentPrice = it.price,
-//                        priceLastUpdated = it.timestamp
-//                    ))
-//                }
-//            }.collect()
-
-//        webSocketHandler.sharedFlow
-//            .filter { it.symbol != null && it.symbol != "" }
-//            .map { tickerPrice ->
-//                with(tickerPrice) {
-//                    val stock = stockDao.getStock(symbol!!)
-//                    stockDao.update(stock.copy(ticker = symbol, currentPrice = price!!))
-//                }
-//            }
-//            .collect()
-//    }*/
-
-    // ---
+    // Helper methods
     suspend fun refreshData() { /*TODO("Implement data refreshing")*/}
 
     suspend fun updateFavorite(stock: Stock) = stockDao.update(stock)
 
-    // Helper methods
     private suspend fun getStockPrice(stock: Stock): Stock {
         val quoteData = service.getQuoteData(stock.ticker)
         return if (quoteData.isSuccessful) with(quoteData.body()!!) {
